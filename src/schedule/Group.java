@@ -1,10 +1,10 @@
-package scheldule;
+package schedule;
 
 import com.google.gson.annotations.SerializedName;
 
 import java.util.ArrayList;
 
-class Group {
+public class Group {
     String group;
     Days days;
 

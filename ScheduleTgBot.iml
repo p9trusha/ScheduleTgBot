@@ -13,5 +13,6 @@
     <orderEntry type="library" name="google.code.gson" level="project" />
     <orderEntry type="library" name="google.code.gson" level="project" />
     <orderEntry type="library" name="apache.directory.studio.commons.io" level="project" />
+    <orderEntry type="library" name="telegram.telegrambots.chat.session.bot" level="project" />
   </component>
 </module>

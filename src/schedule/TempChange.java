@@ -1,4 +1,4 @@
-package scheldule;
+package schedule;
 
 import com.google.gson.annotations.SerializedName;
 

@@ -1,4 +1,4 @@
-package scheldule.telegramBot;
+package schedule.telegramBot;
 
 import lombok.Getter;
 

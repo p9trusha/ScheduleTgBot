@@ -1,4 +1,4 @@
-package scheldule.telegramBot;
+package schedule.telegramBot;
 
 
 import org.apache.commons.lang3.StringUtils;

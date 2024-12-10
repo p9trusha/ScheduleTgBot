@@ -1,39 +1,29 @@
-package scheldule;
+package schedule;
 
+import org.apache.commons.io.IOUtils;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLEncoder;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.io.*;
+import java.util.HashMap;
 
-import scheldule.telegramBot.BotCommands;
-import scheldule.telegramBot.BotComponent;
+import schedule.telegramBot.BotCommands;
+import schedule.telegramBot.BotComponent;
+
+
 
 class EtuApi {
-    String getJson(String group) throws IOException {
-        group = URLEncoder.encode(group, StandardCharsets.UTF_8);
-        String apiLink = String.format(
-                "https://https://digital.etu.ru/api/mobile/schedule",
-                group
-        );
-        URL searchReguest = new URL(apiLink);
-        URLConnection urlCon = searchReguest.openConnection();
-        BufferedReader in = new BufferedReader(
-                new InputStreamReader(
-                        urlCon.getInputStream()));
-        String inputLine;
-        inputLine = in.readLine();
-        in.close();
-        return (inputLine);
+    static String getJson() throws IOException {
+        String apiLink = "https://digital.etu.ru/api/mobile/schedule";
+        return IOUtils.toString(URI.create(apiLink).toURL(), StandardCharsets.UTF_8);
     }
 }
+
 /**
  * comment
  */
@@ -61,7 +51,8 @@ public class Main {
             }
             TelegramBotsApi telegramBotsApi = new TelegramBotsApi(DefaultBotSession.class);
             telegramBotsApi.registerBot(new BotComponent(botComands, token));
-
+            String jsonContent = EtuApi.getJson();
+            HashMap<String, Group> schedule = Parser.json(jsonContent);
         } catch (IOException FileNotFoundException) {
             System.out.println("Файл не удалось открыть");
         } catch (TelegramApiException e) {
