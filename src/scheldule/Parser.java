@@ -1,3 +1,5 @@
+package scheldule;
+
 public class Parser {
     void json(String groupNumber, String inputLine) {
         String TagGroupNumber = groupNumber;
