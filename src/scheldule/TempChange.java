@@ -1,3 +1,5 @@
+package scheldule;
+
 import com.google.gson.annotations.SerializedName;
 
 class TempChange {
