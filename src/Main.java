@@ -1,25 +1,20 @@
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.URI;
-import java.net.URL;
-import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+
+import org.apache.commons.io.IOUtils;
 
 class EtuApi {
-    String getJson() throws IOException {
-        String apiLink = "https://https://digital.etu.ru/api/mobile/schedule";
-        URL searchRequest = URI.create(apiLink).toURL();
-        URLConnection urlCon = searchRequest.openConnection();
-        BufferedReader in = new BufferedReader(new InputStreamReader(urlCon.getInputStream()));
-        String inputLine;
-        inputLine = in.readLine();
-        in.close();
-        return inputLine;
+    static String getJson() throws IOException {
+        String apiLink = "https://digital.etu.ru/api/mobile/schedule";
+        return IOUtils.toString(URI.create(apiLink).toURL(), StandardCharsets.UTF_8);
     }
 }
 
 public class Main {
-    public static void main(String[] args) {
-        System.out.println("Hello world!");
+    public static void main(String[] args) throws IOException {
+        String jsonContent = EtuApi.getJson();
+        HashMap<String, Group> schedule = Parser.json(jsonContent);
     }
 }

@@ -1,6 +1,5 @@
 import com.google.gson.annotations.SerializedName;
 
-import java.net.URL;
 import java.util.ArrayList;
 
 class Lesson {
@@ -8,7 +7,7 @@ class Lesson {
     int week;
     String name;
     String room;
-    URL url;
+    String url;
 
     @SerializedName("second_teacher") String secondTeacher;
     @SerializedName("subject_type") String subjectType;
