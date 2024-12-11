@@ -7,8 +7,6 @@ import com.google.gson.JsonParser;
 import java.util.HashMap;
 import java.util.Set;
 
-import schedule.Group;
-
 public class Parser {
     static HashMap<String, Group> json(String inputLine) {
         JsonObject jsonObject = (JsonObject) JsonParser.parseString(inputLine);

@@ -15,8 +15,6 @@ import java.util.HashMap;
 import schedule.telegramBot.BotCommands;
 import schedule.telegramBot.BotComponent;
 
-
-
 class EtuApi {
     static String getJson() throws IOException {
         String apiLink = "https://digital.etu.ru/api/mobile/schedule";
@@ -53,6 +51,7 @@ public class Main {
             telegramBotsApi.registerBot(new BotComponent(botComands, token));
             String jsonContent = EtuApi.getJson();
             HashMap<String, Group> schedule = Parser.json(jsonContent);
+            System.out.println(schedule.get("3354").getDays().getWednesday().getLessons().get(0).getName());
         } catch (IOException FileNotFoundException) {
             System.out.println("Файл не удалось открыть");
         } catch (TelegramApiException e) {
