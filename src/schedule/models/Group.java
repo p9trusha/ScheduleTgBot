@@ -32,6 +32,18 @@ public class Group {
         @SerializedName("6")
         private Day sunday;
 
+        public Day getDayOfWeek(int index) {
+            return switch (index) {
+                case 0 -> monday;
+                case 1 -> tuesday;
+                case 2 -> wednesday;
+                case 3 -> thursday;
+                case 4 -> friday;
+                case 5 -> saturday;
+                default -> sunday;
+            };
+        }
+
         public Day getMonday() {
             return monday;
         }

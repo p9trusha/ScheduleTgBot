@@ -25,16 +25,25 @@ public class BotAnswers {
                 case 5 -> days.getSaturday();
                 default -> days.getSunday();
             };
-            int t = week%2 + 1;
+            int t = week % 2 + 1;
 
             Lesson lesson;
             for (int i = 0; i < day.getLessons().size(); i++) {
                 lesson = day.getLessons().get(i);
                 if (lesson.getWeek() == t) {
-                    text.append(String.format("\n%s %s\n%s-%s\n%s\n",
-                            lesson.getName(), lesson.getRoom(),
+                    text.append(String.format("\n%s-%s\n%s. %s\n",
                             lesson.getStartTime(), lesson.getEndTime(),
-                            lesson.getTeacher()));
+                            lesson.getSubjectType(), lesson.getName()));
+                    if (!lesson.getRoom().isEmpty()) {
+                        text.append(String.format("ауд. %s\n", lesson.getRoom()));
+                    }
+                    if (!lesson.getTeacher().isEmpty()) {
+                        text.append(lesson.getTeacher());
+                        if (!lesson.getSecondTeacher().isEmpty()) {
+                            text.append(String.format(", %s", lesson.getSecondTeacher()));
+                        }
+                        text.append("\n");
+                    }
                 }
             }
 
@@ -116,9 +125,12 @@ public class BotAnswers {
                 break;
             case 4:
                 week = calendar.getWeeksInWeekYear();
-                for (int i = 1; dayName.length >= i; i++) {
-                    text = text + dayName[i-1] +'\n';
-                    text = text + daySchedule(endOfMessage, schedule, i, week);
+                for (int i = 0; i < 7; i++) {
+                    if (!schedule.get(endOfMessage).getDays().getDayOfWeek(i).getLessons().isEmpty()) {
+                        text = String.format("%s%s\n%s\n",
+                                text, schedule.get(endOfMessage).getDays().getDayOfWeek(i).getName(),
+                                daySchedule(endOfMessage, schedule, i, week));
+                    }
                 }
                 break;
             case 5:
