@@ -1,10 +1,10 @@
-package schedule;
+package schedule.models;
 
 import com.google.gson.annotations.SerializedName;
 
 import java.util.ArrayList;
 
-class Lesson {
+public class Lesson {
     private String teacher;
     private int week;
     private String name;

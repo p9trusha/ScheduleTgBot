@@ -1,4 +1,4 @@
-package schedule;
+package schedule.models;
 
 import com.google.gson.annotations.SerializedName;
 
@@ -16,7 +16,7 @@ public class Group {
         return group;
     }
 
-    static class Days {
+    public static class Days {
         @SerializedName("0")
         private Day monday;
         @SerializedName("1")
@@ -60,7 +60,7 @@ public class Group {
             return sunday;
         }
 
-        static class Day {
+        public static class Day {
             private String name;
             private ArrayList<Lesson> lessons;
 

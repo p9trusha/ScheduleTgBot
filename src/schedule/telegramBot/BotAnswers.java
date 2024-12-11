@@ -2,8 +2,8 @@ package schedule.telegramBot;
 import org.apache.commons.lang3.StringUtils;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import schedule.Group;
-import schedule.Lesson;
+import schedule.models.Group;
+import schedule.models.Lesson;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
@@ -14,26 +14,27 @@ public class BotAnswers {
 
         if (StringUtils.isNumeric(group) && (schedule.containsKey(group))) {
             Group.Days days;
-            days = schedule.get(group).days;
+            days = schedule.get(group).getDays();
             Group.Days.Day day;
-
             day = switch (weekDay) {
-                case 2 -> days.tuesday;
-                case 3 -> days.wednesday;
-                case 4 -> days.thursday;
-                case 5 -> days.friday;
-                case 6 -> days.saturday;
-                default -> days.monday;
+                case 0 -> days.getMonday();
+                case 1 -> days.getTuesday();
+                case 2 -> days.getWednesday();
+                case 3 -> days.getThursday();
+                case 4 -> days.getFriday();
+                case 5 -> days.getSaturday();
+                default -> days.getSunday();
             };
             int t = week%2 + 1;
 
             Lesson lesson;
-            for (int i = 0; i < day.lessons.size(); i++) {
-                lesson = day.lessons.get(i);
-                if (lesson.week == t) {
-                text.append(lesson.name).append(' ').append(lesson.room).append('\n')
-                        .append(lesson.startTime).append('-').append(lesson.endTime)
-                        .append('\n').append(lesson.teacher).append("\n\n");
+            for (int i = 0; i < day.getLessons().size(); i++) {
+                lesson = day.getLessons().get(i);
+                if (lesson.getWeek() == t) {
+                    text.append(String.format("\n%s %s\n%s-%s\n%s\n",
+                            lesson.getName(), lesson.getRoom(),
+                            lesson.getStartTime(), lesson.getEndTime(),
+                            lesson.getTeacher()));
                 }
             }
 
@@ -43,6 +44,7 @@ public class BotAnswers {
         }
         return text.toString();
     }
+
     StringBuilder startCommand(BotCommands botCommands) {
         StringBuilder text = new StringBuilder("Приветствуем в нашем боте, доступны такие команды:\nОдноступенчатые\n");
         for (int i = 0; i < botCommands.oneStepCommand.size(); i++) {
@@ -90,21 +92,27 @@ public class BotAnswers {
                 break;
             case 2:
                 calendar.roll(Calendar.DAY_OF_YEAR, 1);
-                int tomorrow = (calendar.getTime().getDay());
+                int tomorrow = (calendar.get(Calendar.DAY_OF_WEEK) - 2) % 7;
                 week = calendar.getWeeksInWeekYear();
                 if (tomorrow == 0) {
                     week++;
                 }
                 text = daySchedule(endOfMessage, schedule, tomorrow, week);
 
-                text = "Расписание на " + calendar.getTime().getDate()  +'.' + calendar.getTime().getMonth() + '\n' + text;
+                text = String.format("Расписание на %d.%d\n%s",
+                        calendar.get(Calendar.DAY_OF_MONTH),
+                        calendar.get(Calendar.MONTH),
+                        text);
                 calendar.roll(Calendar.DAY_OF_YEAR, -1);
                 break;
             case 3:
-                int today = calendar.getTime().getDay();
+                int today = (calendar.get(Calendar.DAY_OF_WEEK) - 2) % 7;
                 week = calendar.getWeeksInWeekYear();
                 text = daySchedule(endOfMessage, schedule, today, week);
-                text = "Расписание на " + calendar.getTime().getDate() +'.' + calendar.getTime().getMonth() + '\n' + text;
+                text = String.format("Расписание на %d.%d\n%s",
+                        calendar.get(Calendar.DAY_OF_MONTH),
+                        calendar.get(Calendar.MONTH),
+                        text);
                 break;
             case 4:
                 week = calendar.getWeeksInWeekYear();

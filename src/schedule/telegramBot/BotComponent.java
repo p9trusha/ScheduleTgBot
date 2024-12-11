@@ -7,10 +7,8 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import schedule.Group;
+import schedule.models.Group;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.util.HashMap;
 
 

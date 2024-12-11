@@ -1,5 +1,6 @@
 package schedule;
 
+import schedule.models.Group;
 import org.apache.commons.io.IOUtils;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
