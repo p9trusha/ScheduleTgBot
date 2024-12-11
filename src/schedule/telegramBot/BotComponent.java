@@ -1,18 +1,22 @@
 package schedule.telegramBot;
 
 
-import org.apache.commons.lang3.StringUtils;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import schedule.Group;
 
-
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.util.HashMap;
 
 
 public class BotComponent extends TelegramLongPollingBot{
+
+    HashMap<String, Group> schedule;
 
     @Override
     public String getBotUsername() {
@@ -26,9 +30,10 @@ public class BotComponent extends TelegramLongPollingBot{
         return token;
     }
     BotCommands botCommands;
-    public BotComponent(BotCommands botCommands, String token) {
+    public BotComponent(BotCommands botCommands, String token, HashMap<String, Group> schedule) {
         this.botCommands = botCommands;
         this.token = token;
+        this.schedule = schedule;
     }
     public String withOutSpace(String s){
         while (s.endsWith(" ")) {
@@ -36,57 +41,42 @@ public class BotComponent extends TelegramLongPollingBot{
         }
         return s;
     }
-
+    BotAnswers botAnswers = new BotAnswers();
     @Override
     public void onUpdateReceived(Update update) {
         //Проверим, работает ли наш бот.
-
-        String chatid = update.getMessage().getChatId().toString();
         String message = update.getMessage().getText();
-        String endOfMessage = message.substring(message.length()-4);
-        String startOfMessage = message.substring(0, message.length() - 4);
-        startOfMessage = withOutSpace(startOfMessage);
-
-        if (botCommands.oneStepCommand.contains(message) && message.startsWith("/")) {
-            SendMessage sendMessage = new SendMessage();
-            sendMessage.setChatId(chatid);
-            sendMessage.setText("Доступные команды:\n/start\nРасписание на завтра ****\nРасписание на завтра");
-            try {
-                this.execute(sendMessage);
-
-            } catch (TelegramApiException e) {
-                throw new RuntimeException(e);
-            }
+        String groupPiece = "";
+        String commandPiece = "";
+        if (message.startsWith("/")) {
+            commandPiece = message;
+        } else if (message.length() > 4) {
+            groupPiece = message.substring(message.length()-4);
+            commandPiece = message.substring(0, message.length() - 4);
+            commandPiece = withOutSpace(commandPiece);
         }
+        if (botCommands.oneStepCommand.contains(commandPiece)) {
+             {
 
-        else if (StringUtils.isNumeric(endOfMessage)) {
-            if (botCommands.oneStepCommand.contains(startOfMessage)) {
-                SendMessage sendMessage = new SendMessage();
-                sendMessage.setChatId(chatid);
-                sendMessage.setText("Расписание на завтра я откуда ебу");
-                try {
-                    this.execute(sendMessage);
-
-                } catch (TelegramApiException e) {
-                    throw new RuntimeException(e);
-                }
-            }
+                 try {
+                     this.execute(botAnswers.OneStepAnswers(update, botCommands, commandPiece, groupPiece, schedule));
+                 } catch (TelegramApiException e) {
+                     throw new RuntimeException(e);
+                 }
+             }
         }
         else if (botCommands.twoStepCommand.contains(message)) {
-            SendMessage sendMessage = new SendMessage();
-            sendMessage.setChatId(chatid);
-            sendMessage.setText("Введите группу");
-            try {
-                this.execute(sendMessage);
 
+            try {
+                this.execute(botAnswers.TwoStepAnswers(update, botCommands, commandPiece, groupPiece, schedule));
             } catch (TelegramApiException e) {
                 throw new RuntimeException(e);
             }
         }
         else {
             SendMessage sendMessage = new SendMessage();
-            sendMessage.setChatId(chatid);
-            sendMessage.setText("Сударь, вы ввели хуйню");
+
+            sendMessage.setText("Сударь, вы ввели некорректно");
             try {
                 this.execute(sendMessage);
 
