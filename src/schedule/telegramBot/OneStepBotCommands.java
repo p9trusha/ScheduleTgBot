@@ -3,11 +3,12 @@ package schedule.telegramBot;
 public enum OneStepBotCommands {
     START("/start"),
     INFO("/info"),
-    TODAY_GROUP_NUMBER("расписание на сегодня"),
-    TOMORROW_GROUP_NUMBER("расписание на завтра"),
-    THIS_WEEK_GROUP_NUMBER("расписание на неделю"),
-    NEXT_WEEK_GROUP_NUMBER("расписание на следующую неделю"),
-    GROUP("группа");
+    TODAY__GROUP_NUMBER("расписание на сегодня"),
+    TOMORROW__GROUP_NUMBER("расписание на завтра"),
+    THIS_WEEK__GROUP_NUMBER("расписание на неделю"),
+    NEXT_WEEK__GROUP_NUMBER("расписание на следующую неделю"),
+    GROUP("группа"),
+    NEAR_LESSON__GROUP_NUMBER("ближайшее занятие");
 
     private final String title;
 

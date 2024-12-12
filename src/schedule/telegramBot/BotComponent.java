@@ -72,14 +72,15 @@ public class BotComponent extends TelegramLongPollingBot{
         if (message.startsWith("/")) {
             commandPiece = message;
         } else if (message.length() > 4) {
-            groupPiece = message.substring(message.length()-4);
-            commandPiece = message.substring(0, message.length() - 4);
+            groupPiece = message.substring(message.lastIndexOf(" ") + 1);
+            commandPiece = message.substring(0, message.lastIndexOf(" ") + 1);
             commandPiece = withOutSpace(commandPiece);
         }
         if (botCommands.oneStepCommand.contains(commandPiece)) {
             {
                 try {
-                    this.execute(botAnswers.OneStepAnswers(update,usersLog, botCommands, commandPiece, groupPiece, schedule));
+                    this.execute(botAnswers.OneStepAnswers(update,usersLog, botCommands,
+                            commandPiece, groupPiece, schedule));
                 } catch (TelegramApiException | IOException e) {
                     throw new RuntimeException(e);
                 }
