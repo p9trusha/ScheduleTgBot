@@ -27,15 +27,13 @@ public class BotAnswers {
                 String teacher = lesson.getTeacher();
                 String room = lesson.getRoom();
                 ArrayList<TempChange> changes = lesson.getTempChanges();
-                if (!changes.isEmpty()) {
-                    for (TempChange change : changes) {
-                        if (change.getStartTimestamp() <= dayTimestamp && dayTimestamp <= change.getEndTimestamp()) {
-                            if (change.getType().equals("teacher")) {
-                                teacher = change.getTeacher();
-                            }
-                            else if (change.getType().equals("room")) {
-                                room = change.getRoom();
-                            }
+                for (TempChange change : changes) {
+                    if (change.getStartTimestamp() <= dayTimestamp && dayTimestamp <= change.getEndTimestamp()) {
+                        if (change.getType().equals("teacher")) {
+                            teacher = change.getTeacher();
+                        }
+                        else if (change.getType().equals("room")) {
+                            room = change.getRoom();
                         }
                     }
                 }
