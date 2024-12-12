@@ -24,3 +24,4 @@ public class BotCommands {
         this.twoStepCommand.add(s);
     }
 }
+
