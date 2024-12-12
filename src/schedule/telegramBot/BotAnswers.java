@@ -4,6 +4,9 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import schedule.models.Group;
 import schedule.models.Lesson;
+
+
+import java.io.IOException;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
@@ -82,7 +85,7 @@ public class BotAnswers {
                 Используются такие библиотеки как gson и telegramBots""";
     }
 
-    SendMessage OneStepAnswers(Update update, BotCommands botCommands, String commandPiece, String endOfMessage, HashMap<String, Group> schedule) {
+    SendMessage OneStepAnswers(Update update,UsersLog usersLog, BotCommands botCommands, String commandPiece, String endOfMessage, HashMap<String, Group> schedule) throws IOException {
 
         String chatId = update.getMessage().getChatId().toString();
         int index = botCommands.oneStepCommand.indexOf(commandPiece);
@@ -91,7 +94,7 @@ public class BotAnswers {
         Calendar calendar = new GregorianCalendar();
 
         String[] dayName  = new String[] {"Monday", "Tuesday", "Wednesday", "ThursDay", "Friday", "Saturday"};
-
+        UsersLog.UserLog userLog = new UsersLog.UserLog();
         switch (index) {
             case 0:
                 text = String.valueOf(startCommand(botCommands));
@@ -140,6 +143,13 @@ public class BotAnswers {
                     text = text + daySchedule(endOfMessage, schedule, i, week);
                 }
                 break;
+            case 6:
+                userLog.setUserId(update.getMessage().getFrom().getId().toString());
+                userLog.setCommand(endOfMessage);
+                usersLog.addUserLog(userLog);
+                usersLog.newLog();
+                text = "Ваша группа успешно сохранена";
+                break;
             default:
                 text = "Ошибка программы";
         }
@@ -151,16 +161,38 @@ public class BotAnswers {
         return sendMessage;
     }
 
-    SendMessage TwoStepAnswers(Update update, BotCommands botCommands, String commandPiece, String endOfMessage, HashMap<String, Group> schedule) {
+    SendMessage TwoStepAnswers(Update update, BotCommands botCommands, UsersLog usersLog, HashMap<String, Group> schedule) throws IOException {
         String chatId = update.getMessage().getChatId().toString();
-        String text = "Пока не сделано";
-
+        String text = update.getMessage().getText();
         SendMessage sendMessage = new SendMessage();
+        if (text.startsWith("М")) {
+            if (usersLog.contains(update)) {
+                String commandPiece;
+                String group = usersLog.getGroup(update.getMessage().getFrom().getId().toString());
+                commandPiece = switch (text) {
+                    case "Мое расписание на сегодня" -> "Расписание на сегодня";
+                    case "Мое расписание на завтра" -> "Расписание на завтра";
+                    case "Мое расписание на неделю" -> "Расписание на неделю";
+                    case "Мое расписание на следующую неделю" -> "Расписание на следующую неделю";
+                    default -> "";
+                };
+                sendMessage = OneStepAnswers(update, usersLog,botCommands, commandPiece, group, schedule );
+            }
+            else {
+                sendMessage.setText("Введите Группа [группа] \nИ повторите попытку");
+            }
+        }
+        else if (botCommands.oneStepCommand.contains(update.getMessage().getText())){
+            sendMessage.setText("Введите номер вашей группы");
+            UsersLog.UserLog userLog = new UsersLog.UserLog();
+            userLog.setCommand(update.getMessage().getText());
+            userLog.setUserId(update.getMessage().getFrom().getId().toString());
+            usersLog.addUserLog(userLog);
+            usersLog.newLog();
+        }
+
         sendMessage.setChatId(chatId);
-        sendMessage.setText(text);
         return sendMessage;
     }
 
-    private void execute(SendMessage sendMessage) {
-    }
 }

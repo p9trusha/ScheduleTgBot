@@ -15,6 +15,7 @@ import java.util.HashMap;
 
 import schedule.telegramBot.BotCommands;
 import schedule.telegramBot.BotComponent;
+import schedule.telegramBot.UsersLog;
 
 class EtuApi {
     static String getJson() throws IOException {
@@ -39,11 +40,17 @@ public class Main {
             try (BufferedReader commandReader = new BufferedReader(new FileReader(commandsPath))) {
             String token;
             token = reader.readLine();
+            reader.close();
+
             BotCommands botCommands = getBotCommands(commandReader);
+
             String jsonContent = EtuApi.getJson();
             HashMap<String, Group> schedule = Parser.json(jsonContent);
+            UsersLog usersLog = new UsersLog();
+            usersLog.logsReader();
             TelegramBotsApi telegramBotsApi = new TelegramBotsApi(DefaultBotSession.class);
-            telegramBotsApi.registerBot(new BotComponent(botCommands, token, schedule));}
+            telegramBotsApi.registerBot(new BotComponent(botCommands, token, schedule, usersLog));
+            }
 
         } catch (IOException FileNotFoundException) {
             System.out.println("Файл не удалось открыть");
@@ -61,7 +68,7 @@ public class Main {
         }
         count = Integer.parseInt(commandReader.readLine());
         for (int i =0; i < count; i++) {
-            botCommands.addTwoStepComand(commandReader.readLine());
+            botCommands.addTwoStepCommand(commandReader.readLine());
         }
         return botCommands;
     }

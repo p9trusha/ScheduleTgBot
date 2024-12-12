@@ -20,7 +20,7 @@ public class BotCommands {
     public void addOneStepCommand(String s) {
         this.oneStepCommand.add(s);
     }
-    public void addTwoStepComand(String s) {
+    public void addTwoStepCommand(String s) {
         this.twoStepCommand.add(s);
     }
 }
