@@ -6,58 +6,37 @@ import schedule.models.Group;
 import schedule.models.Lesson;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 
 public class BotAnswers {
-    String daySchedule(String group, HashMap<String, Group> schedule, int weekDay, int week) {
+    String daySchedule(String group, ArrayList<Lesson> lessons, int week) {
         StringBuilder text = new StringBuilder();
-
-        if (StringUtils.isNumeric(group) && (schedule.containsKey(group))) {
-            Group.Days days;
-            days = schedule.get(group).getDays();
-            Group.Days.Day day;
-            day = switch (weekDay) {
-                case 0 -> days.getMonday();
-                case 1 -> days.getTuesday();
-                case 2 -> days.getWednesday();
-                case 3 -> days.getThursday();
-                case 4 -> days.getFriday();
-                case 5 -> days.getSaturday();
-                default -> days.getSunday();
-            };
-            int weekParity;
-            if (week % 2 == 0) {
-                weekParity = 2;
-            }
-            else {
-                weekParity = 1;
-            }
-
-            Lesson lesson;
-            for (int i = 0; i < day.getLessons().size(); i++) {
-                lesson = day.getLessons().get(i);
-                if (lesson.getWeek() == weekParity) {
-                    text.append(String.format("\n%s-%s\n%s. %s\n",
-                            lesson.getStartTime(), lesson.getEndTime(),
-                            lesson.getSubjectType(), lesson.getName()));
-                    if (!lesson.getRoom().isEmpty()) {
-                        text.append(String.format("ауд. %s\n", lesson.getRoom()));
+        int weekParity;
+        if (week % 2 == 0) {
+            weekParity = 2;
+        }
+        else {
+            weekParity = 1;
+        }
+        for (Lesson lesson : lessons) {
+            if (lesson.getWeek() == weekParity) {
+                text.append(String.format("\n%s-%s\n%s. %s\n",
+                        lesson.getStartTime(), lesson.getEndTime(),
+                        lesson.getSubjectType(), lesson.getName()));
+                if (!lesson.getRoom().isEmpty()) {
+                    text.append(String.format("ауд. %s\n", lesson.getRoom()));
+                }
+                if (!lesson.getTeacher().isEmpty()) {
+                    text.append(lesson.getTeacher());
+                    if (!lesson.getSecondTeacher().isEmpty()) {
+                        text.append(String.format(", %s", lesson.getSecondTeacher()));
                     }
-                    if (!lesson.getTeacher().isEmpty()) {
-                        text.append(lesson.getTeacher());
-                        if (!lesson.getSecondTeacher().isEmpty()) {
-                            text.append(String.format(", %s", lesson.getSecondTeacher()));
-                        }
-                        text.append("\n");
-                    }
+                    text.append("\n");
                 }
             }
-
-            System.out.println();
-        } else {
-            text = new StringBuilder("Вы ввели некорректный номер группы");
         }
         return text.toString();
     }
@@ -99,12 +78,12 @@ public class BotAnswers {
         int week = calendar.get(Calendar.WEEK_OF_YEAR) + 1;
         if (calendar.get(Calendar.MONTH) >= 9) {
             week -= new GregorianCalendar(calendar.get(Calendar.YEAR),
-                    9,
+                    Calendar.SEPTEMBER,
                     1).get(Calendar.WEEK_OF_YEAR);
         }
         else {
             week -= new GregorianCalendar(calendar.get(Calendar.YEAR) - 1,
-                    9,
+                    Calendar.SEPTEMBER,
                     1).get(Calendar.WEEK_OF_YEAR);
         }
         UsersLog.UserLog userLog = new UsersLog.UserLog();
@@ -116,29 +95,39 @@ public class BotAnswers {
         }
         else if (commandPiece.toLowerCase().equals(OneStepBotCommands.TODAY_GROUP_NUMBER.getTitle())) {
             int today = (calendar.get(Calendar.DAY_OF_WEEK) - 2) % 7;
-            text = daySchedule(endOfMessage, schedule, today, week);
-            text = String.format("Расписание на %d.%d\n%s",
-                    calendar.get(Calendar.DAY_OF_MONTH),
-                    calendar.get(Calendar.MONTH),
-                    text);
+            if (StringUtils.isNumeric(endOfMessage) && (schedule.containsKey(endOfMessage))) {
+                ArrayList<Lesson> lessons = schedule.get(endOfMessage).getDays().getDayOfWeek(today).getLessons();
+                text = daySchedule(endOfMessage, lessons, week);
+                text = String.format("Расписание на %d.%d\n%s",
+                        calendar.get(Calendar.DAY_OF_MONTH),
+                        calendar.get(Calendar.MONTH),
+                        text);
+            }
+            else {
+                text = "Вы ввели некорректный номер группы";
+            }
         }
         else if (commandPiece.toLowerCase().equals(OneStepBotCommands.TOMORROW_GROUP_NUMBER.getTitle())) {
             calendar.roll(Calendar.DAY_OF_YEAR, 1);
             int tomorrow = (calendar.get(Calendar.DAY_OF_WEEK) - 2) % 7;
             if (tomorrow == 0) { week++; }
-            text = daySchedule(endOfMessage, schedule, tomorrow, week);
-            text = String.format("Расписание на %d.%d\n%s",
-                    calendar.get(Calendar.DAY_OF_MONTH),
-                    calendar.get(Calendar.MONTH),
-                    text);
+            if (StringUtils.isNumeric(endOfMessage) && (schedule.containsKey(endOfMessage))) {
+                ArrayList<Lesson> lessons = schedule.get(endOfMessage).getDays().getDayOfWeek(tomorrow).getLessons();
+                text = daySchedule(endOfMessage, lessons, week);
+                text = String.format("Расписание на %d.%d\n%s",
+                        calendar.get(Calendar.DAY_OF_MONTH),
+                        calendar.get(Calendar.MONTH),
+                        text);
+            }
             calendar.roll(Calendar.DAY_OF_YEAR, -1);
         }
         else if (commandPiece.toLowerCase().equals(OneStepBotCommands.THIS_WEEK_GROUP_NUMBER.getTitle())) {
             for (int i = 0; i < 7; i++) {
                 if (!schedule.get(endOfMessage).getDays().getDayOfWeek(i).getLessons().isEmpty()) {
+                    ArrayList<Lesson> lessons = schedule.get(endOfMessage).getDays().getDayOfWeek(i).getLessons();
                     text = String.format("%s%s\n%s\n",
                             text, schedule.get(endOfMessage).getDays().getDayOfWeek(i).getName(),
-                            daySchedule(endOfMessage, schedule, i, week));
+                            daySchedule(endOfMessage, lessons, week));
                 }
             }
         }
@@ -149,9 +138,10 @@ public class BotAnswers {
             }
             for (int i = 0; i < 7; i++) {
                 if (!schedule.get(endOfMessage).getDays().getDayOfWeek(i).getLessons().isEmpty()) {
+                    ArrayList<Lesson> lessons = schedule.get(endOfMessage).getDays().getDayOfWeek(i).getLessons();
                     text = String.format("%s%s\n%s\n",
                             text, schedule.get(endOfMessage).getDays().getDayOfWeek(i).getName(),
-                            daySchedule(endOfMessage, schedule, i, week));
+                            daySchedule(endOfMessage, lessons, week));
                 }
             }
         }
