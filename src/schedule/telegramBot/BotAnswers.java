@@ -4,6 +4,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import schedule.models.Group;
 import schedule.models.Lesson;
+import schedule.models.TempChange;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -12,7 +13,7 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 
 public class BotAnswers {
-    String daySchedule(ArrayList<Lesson> lessons, int week) {
+    String daySchedule(ArrayList<Lesson> lessons, int week, long dayTimestamp) {
         StringBuilder text = new StringBuilder();
         int weekParity;
         if (week % 2 == 0) {
@@ -23,13 +24,28 @@ public class BotAnswers {
         }
         for (Lesson lesson : lessons) {
             if (lesson.getWeek() == weekParity) {
+                String teacher = lesson.getTeacher();
+                String room = lesson.getRoom();
+                ArrayList<TempChange> changes = lesson.getTempChanges();
+                if (!changes.isEmpty()) {
+                    for (TempChange change : changes) {
+                        if (change.getStartTimestamp() <= dayTimestamp && dayTimestamp <= change.getEndTimestamp()) {
+                            if (change.getType().equals("teacher")) {
+                                teacher = change.getTeacher();
+                            }
+                            else if (change.getType().equals("room")) {
+                                room = change.getRoom();
+                            }
+                        }
+                    }
+                }
                 text.append(String.format("\n%s-%s\n%s. %s\n",
                         lesson.getStartTime(), lesson.getEndTime(),
                         lesson.getSubjectType(), lesson.getName()));
-                if (!lesson.getRoom().isEmpty()) {
-                    text.append(String.format("ауд. %s\n", lesson.getRoom()));
+                if (!room.isEmpty()) {
+                    text.append(String.format("ауд. %s\n", room));
                 }
-                if (!lesson.getTeacher().isEmpty()) {
+                if (!teacher.isEmpty()) {
                     text.append(lesson.getTeacher());
                     if (!lesson.getSecondTeacher().isEmpty()) {
                         text.append(String.format(", %s", lesson.getSecondTeacher()));
@@ -38,7 +54,7 @@ public class BotAnswers {
                 }
             }
         }
-        return text.toString();
+    return text.toString();
     }
 
     StringBuilder startCommand(BotCommands botCommands) {
@@ -75,7 +91,7 @@ public class BotAnswers {
         String chatId = update.getMessage().getChatId().toString();
         String text = "";
         Calendar calendar = new GregorianCalendar();
-        int week = calendar.get(Calendar.WEEK_OF_YEAR) + 1;
+        int week = calendar.get(Calendar.WEEK_OF_YEAR);
         if (calendar.get(Calendar.MONTH) >= 9) {
             week -= new GregorianCalendar(calendar.get(Calendar.YEAR),
                     Calendar.SEPTEMBER,
@@ -101,15 +117,16 @@ public class BotAnswers {
                     text = String.format("Расписание на %d.%d\n%s",
                             calendar.get(Calendar.DAY_OF_MONTH),
                             calendar.get(Calendar.MONTH),
-                            daySchedule(lessons, week));
+                            daySchedule(lessons, week, getTimestamp(calendar)));
                 }
                 else if (commandPiece.toLowerCase().equals(OneStepBotCommands.TOMORROW_GROUP_NUMBER.getTitle())) {
                     calendar.roll(Calendar.DAY_OF_YEAR, 1);
                     int tomorrow = (calendar.get(Calendar.DAY_OF_WEEK) - 2) % 7;
                     if (tomorrow == 0) { week++; }
                     if (StringUtils.isNumeric(endOfMessage) && (schedule.containsKey(endOfMessage))) {
-                        ArrayList<Lesson> lessons = schedule.get(endOfMessage).getDays().getDayOfWeek(tomorrow).getLessons();
-                        text = daySchedule(lessons, week);
+                        ArrayList<Lesson> lessons = schedule.get(endOfMessage).getDays()
+                                .getDayOfWeek(tomorrow).getLessons();
+                        text = daySchedule(lessons, week, getTimestamp(calendar));
                         text = String.format("Расписание на %d.%d\n%s",
                                 calendar.get(Calendar.DAY_OF_MONTH),
                                 calendar.get(Calendar.MONTH),
@@ -118,28 +135,34 @@ public class BotAnswers {
                     calendar.roll(Calendar.DAY_OF_YEAR, -1);
                 }
                 else if (commandPiece.toLowerCase().equals(OneStepBotCommands.THIS_WEEK_GROUP_NUMBER.getTitle())) {
+                    int indexDayOfWeek = (calendar.get(Calendar.DAY_OF_WEEK) - 2) % 7;
+                    calendar.roll(Calendar.DAY_OF_YEAR, -indexDayOfWeek);
                     for (int i = 0; i < 7; i++) {
                         if (!schedule.get(endOfMessage).getDays().getDayOfWeek(i).getLessons().isEmpty()) {
-                            ArrayList<Lesson> lessons = schedule.get(endOfMessage).getDays().getDayOfWeek(i).getLessons();
+                            ArrayList<Lesson> lessons = schedule.get(endOfMessage).getDays()
+                                    .getDayOfWeek(i).getLessons();
                             text = String.format("%s%s\n%s\n",
                                     text, schedule.get(endOfMessage).getDays().getDayOfWeek(i).getName(),
-                                    daySchedule(lessons, week));
+                                    daySchedule(lessons, week, getTimestamp(calendar)));
                         }
+                        calendar.roll(Calendar.DAY_OF_YEAR, 1);
                     }
+                    calendar.roll(Calendar.DAY_OF_YEAR, -7 + indexDayOfWeek);
                 }
                 else if (commandPiece.toLowerCase().equals(OneStepBotCommands.NEXT_WEEK_GROUP_NUMBER.getTitle())) {
                     week += 1;
-                    if (week > calendar.getWeeksInWeekYear()) {
-                        week = 0;
-                    }
+                    int indexDayOfWeek = (calendar.get(Calendar.DAY_OF_WEEK) - 2) % 7;
+                    calendar.roll(Calendar.DAY_OF_YEAR, -indexDayOfWeek + 7);
                     for (int i = 0; i < 7; i++) {
                         if (!schedule.get(endOfMessage).getDays().getDayOfWeek(i).getLessons().isEmpty()) {
                             ArrayList<Lesson> lessons = schedule.get(endOfMessage).getDays().getDayOfWeek(i).getLessons();
                             text = String.format("%s%s\n%s\n",
                                     text, schedule.get(endOfMessage).getDays().getDayOfWeek(i).getName(),
-                                    daySchedule(lessons, week));
+                                    daySchedule(lessons, week, getTimestamp(calendar)));
                         }
+                        calendar.roll(Calendar.DAY_OF_YEAR, 1);
                     }
+                    calendar.roll(Calendar.DAY_OF_YEAR, -14 + indexDayOfWeek);
                 }
                 else if (commandPiece.toLowerCase().equals(OneStepBotCommands.GROUP.getTitle())) {
                     userLog.setUserId(update.getMessage().getFrom().getId().toString());
@@ -163,6 +186,10 @@ public class BotAnswers {
         sendMessage.setChatId(chatId);
         sendMessage.setText(text);
         return sendMessage;
+    }
+
+    static long getTimestamp(Calendar cl) {
+        return cl.getTimeInMillis() / 1000;
     }
 
     SendMessage TwoStepAnswers(Update update, BotCommands botCommands, UsersLog usersLog,

@@ -14,10 +14,10 @@ public class TempChange {
     private String endDate;
 
     @SerializedName("start_timestamp")
-    private int startTimestamp;
+    private long startTimestamp;
 
     @SerializedName("end_timestamp")
-    private int endTimestamp;
+    private long endTimestamp;
 
     public String getType() {
         return type;
@@ -39,11 +39,11 @@ public class TempChange {
         return endDate;
     }
 
-    public int getStartTimestamp() {
+    public long getStartTimestamp() {
         return startTimestamp;
     }
 
-    public int getEndTimestamp() {
+    public long getEndTimestamp() {
         return endTimestamp;
     }
 }

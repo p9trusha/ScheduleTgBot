@@ -116,7 +116,7 @@ public class UsersLog {
         UsersLog.UserLog userLog = new UsersLog.UserLog();
         for (int i = 0; i < bufferedReader.lines().count(); i++) {
             line = bufferedReader.readLine();
-            if (!line.isEmpty()) {
+            if (line != null && !line.isEmpty()) {
                 userLog.setUserId(line.substring(0, line.lastIndexOf("/")));
                 userLog.setCommand(line.substring(line.lastIndexOf("/")));
                 this.addUserLog(userLog);
