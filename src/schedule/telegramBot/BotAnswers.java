@@ -12,7 +12,7 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 
 public class BotAnswers {
-    String daySchedule(String group, ArrayList<Lesson> lessons, int week) {
+    String daySchedule(ArrayList<Lesson> lessons, int week) {
         StringBuilder text = new StringBuilder();
         int weekParity;
         if (week % 2 == 0) {
@@ -93,64 +93,68 @@ public class BotAnswers {
         else if (commandPiece.toLowerCase().equals(OneStepBotCommands.INFO.getTitle())) {
             text = infoCommand();
         }
-        else if (commandPiece.toLowerCase().equals(OneStepBotCommands.TODAY_GROUP_NUMBER.getTitle())) {
-            int today = (calendar.get(Calendar.DAY_OF_WEEK) - 2) % 7;
+        else if (!endOfMessage.isEmpty()) {
             if (StringUtils.isNumeric(endOfMessage) && (schedule.containsKey(endOfMessage))) {
-                ArrayList<Lesson> lessons = schedule.get(endOfMessage).getDays().getDayOfWeek(today).getLessons();
-                text = daySchedule(endOfMessage, lessons, week);
-                text = String.format("Расписание на %d.%d\n%s",
-                        calendar.get(Calendar.DAY_OF_MONTH),
-                        calendar.get(Calendar.MONTH),
-                        text);
+                if (commandPiece.toLowerCase().equals(OneStepBotCommands.TODAY_GROUP_NUMBER.getTitle())) {
+                    int today = (calendar.get(Calendar.DAY_OF_WEEK) - 2) % 7;
+                    ArrayList<Lesson> lessons = schedule.get(endOfMessage).getDays().getDayOfWeek(today).getLessons();
+                    text = String.format("Расписание на %d.%d\n%s",
+                            calendar.get(Calendar.DAY_OF_MONTH),
+                            calendar.get(Calendar.MONTH),
+                            daySchedule(lessons, week));
+                }
+                else if (commandPiece.toLowerCase().equals(OneStepBotCommands.TOMORROW_GROUP_NUMBER.getTitle())) {
+                    calendar.roll(Calendar.DAY_OF_YEAR, 1);
+                    int tomorrow = (calendar.get(Calendar.DAY_OF_WEEK) - 2) % 7;
+                    if (tomorrow == 0) { week++; }
+                    if (StringUtils.isNumeric(endOfMessage) && (schedule.containsKey(endOfMessage))) {
+                        ArrayList<Lesson> lessons = schedule.get(endOfMessage).getDays().getDayOfWeek(tomorrow).getLessons();
+                        text = daySchedule(lessons, week);
+                        text = String.format("Расписание на %d.%d\n%s",
+                                calendar.get(Calendar.DAY_OF_MONTH),
+                                calendar.get(Calendar.MONTH),
+                                text);
+                    }
+                    calendar.roll(Calendar.DAY_OF_YEAR, -1);
+                }
+                else if (commandPiece.toLowerCase().equals(OneStepBotCommands.THIS_WEEK_GROUP_NUMBER.getTitle())) {
+                    for (int i = 0; i < 7; i++) {
+                        if (!schedule.get(endOfMessage).getDays().getDayOfWeek(i).getLessons().isEmpty()) {
+                            ArrayList<Lesson> lessons = schedule.get(endOfMessage).getDays().getDayOfWeek(i).getLessons();
+                            text = String.format("%s%s\n%s\n",
+                                    text, schedule.get(endOfMessage).getDays().getDayOfWeek(i).getName(),
+                                    daySchedule(lessons, week));
+                        }
+                    }
+                }
+                else if (commandPiece.toLowerCase().equals(OneStepBotCommands.NEXT_WEEK_GROUP_NUMBER.getTitle())) {
+                    week += 1;
+                    if (week > calendar.getWeeksInWeekYear()) {
+                        week = 0;
+                    }
+                    for (int i = 0; i < 7; i++) {
+                        if (!schedule.get(endOfMessage).getDays().getDayOfWeek(i).getLessons().isEmpty()) {
+                            ArrayList<Lesson> lessons = schedule.get(endOfMessage).getDays().getDayOfWeek(i).getLessons();
+                            text = String.format("%s%s\n%s\n",
+                                    text, schedule.get(endOfMessage).getDays().getDayOfWeek(i).getName(),
+                                    daySchedule(lessons, week));
+                        }
+                    }
+                }
+                else if (commandPiece.toLowerCase().equals(OneStepBotCommands.GROUP.getTitle())) {
+                    userLog.setUserId(update.getMessage().getFrom().getId().toString());
+                    userLog.setCommand(endOfMessage);
+                    usersLog.addUserLog(userLog);
+                    usersLog.newLog();
+                    text = "Ваша группа успешно сохранена";
+                }
+                else {
+                    text = "Мы не знаем такой команды";
+                }
             }
             else {
                 text = "Вы ввели некорректный номер группы";
             }
-        }
-        else if (commandPiece.toLowerCase().equals(OneStepBotCommands.TOMORROW_GROUP_NUMBER.getTitle())) {
-            calendar.roll(Calendar.DAY_OF_YEAR, 1);
-            int tomorrow = (calendar.get(Calendar.DAY_OF_WEEK) - 2) % 7;
-            if (tomorrow == 0) { week++; }
-            if (StringUtils.isNumeric(endOfMessage) && (schedule.containsKey(endOfMessage))) {
-                ArrayList<Lesson> lessons = schedule.get(endOfMessage).getDays().getDayOfWeek(tomorrow).getLessons();
-                text = daySchedule(endOfMessage, lessons, week);
-                text = String.format("Расписание на %d.%d\n%s",
-                        calendar.get(Calendar.DAY_OF_MONTH),
-                        calendar.get(Calendar.MONTH),
-                        text);
-            }
-            calendar.roll(Calendar.DAY_OF_YEAR, -1);
-        }
-        else if (commandPiece.toLowerCase().equals(OneStepBotCommands.THIS_WEEK_GROUP_NUMBER.getTitle())) {
-            for (int i = 0; i < 7; i++) {
-                if (!schedule.get(endOfMessage).getDays().getDayOfWeek(i).getLessons().isEmpty()) {
-                    ArrayList<Lesson> lessons = schedule.get(endOfMessage).getDays().getDayOfWeek(i).getLessons();
-                    text = String.format("%s%s\n%s\n",
-                            text, schedule.get(endOfMessage).getDays().getDayOfWeek(i).getName(),
-                            daySchedule(endOfMessage, lessons, week));
-                }
-            }
-        }
-        else if (commandPiece.toLowerCase().equals(OneStepBotCommands.NEXT_WEEK_GROUP_NUMBER.getTitle())) {
-            week += 1;
-            if (week > calendar.getWeeksInWeekYear()) {
-                week = 0;
-            }
-            for (int i = 0; i < 7; i++) {
-                if (!schedule.get(endOfMessage).getDays().getDayOfWeek(i).getLessons().isEmpty()) {
-                    ArrayList<Lesson> lessons = schedule.get(endOfMessage).getDays().getDayOfWeek(i).getLessons();
-                    text = String.format("%s%s\n%s\n",
-                            text, schedule.get(endOfMessage).getDays().getDayOfWeek(i).getName(),
-                            daySchedule(endOfMessage, lessons, week));
-                }
-            }
-        }
-        else if (commandPiece.toLowerCase().equals(OneStepBotCommands.GROUP.getTitle())) {
-            userLog.setUserId(update.getMessage().getFrom().getId().toString());
-            userLog.setCommand(endOfMessage);
-            usersLog.addUserLog(userLog);
-            usersLog.newLog();
-            text = "Ваша группа успешно сохранена";
         }
         else {
             text = "Мы не знаем такой команды";
