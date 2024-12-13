@@ -1,30 +1,25 @@
 package schedule.telegramBot;
-
-
-import org.apache.commons.lang3.StringUtils;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
-
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
-
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import schedule.models.Group;
-
 import java.io.IOException;
 import java.util.HashMap;
 
-
+/**
+ * {@code token} is telegramBot token
+ * <p>
+ * {@code onUpdateReceived} check server
+ * if server have update method would be start and give answers to user
+ */
 public class BotComponent extends TelegramLongPollingBot{
-
     HashMap<String, Group> schedule;
-
     @Override
     public String getBotUsername() {
         return "schedule_etu3354_bot";
     }
     String token;
-
-
     @Override
     public String getBotToken() {
         return token;
@@ -43,18 +38,19 @@ public class BotComponent extends TelegramLongPollingBot{
         }
         return s;
     }
-    BotAnswers botAnswers = new BotAnswers();
-
 
     @Override
     public void onUpdateReceived(Update update) {
-        String message = update.getMessage().getText();
+        BotAnswers botAnswers = new BotAnswers(schedule);
+        String message = update.getMessage().getText().toLowerCase();
         String groupPiece = "";
         String commandPiece = "";
+        String text;
         String id = update.getMessage().getFrom().getId().toString();
-
+        SendMessage sendMessage = new SendMessage();
+        sendMessage.setChatId(update.getMessage().getChatId());
         if (usersLog.getCommand(id) != null) {
-            if (StringUtils.isNumeric(message) && message.length() == 4) {
+            if (botAnswers.isGroup(message, schedule)) {
                 groupPiece = message;
                 commandPiece = usersLog.getCommand(id);
                 System.out.println(usersLog.getLogs());
@@ -65,10 +61,11 @@ public class BotComponent extends TelegramLongPollingBot{
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
-
             }
         }
-
+        if (usersLog.getGroup(update.getMessage().getFrom().getId().toString()) != null) {
+            sendMessage.setReplyMarkup(botAnswers.replyKeyboardMarkup());
+        }
         if (message.startsWith("/")) {
             commandPiece = message;
         } else if (message.length() > 4) {
@@ -79,31 +76,32 @@ public class BotComponent extends TelegramLongPollingBot{
         if (botCommands.oneStepCommand.contains(commandPiece)) {
             {
                 try {
-                    this.execute(botAnswers.OneStepAnswers(update,usersLog, botCommands,
-                            commandPiece, groupPiece, schedule));
-                } catch (TelegramApiException | IOException e) {
+                    text = botAnswers.OneStepAnswers(update, usersLog, botCommands, commandPiece, groupPiece);
+                    System.out.println(text);
+                } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
+
             }
         }
         else if (botCommands.twoStepCommand.contains(message)) {
 
             try {
-                this.execute(botAnswers.TwoStepAnswers(update, botCommands, usersLog, schedule));
-            } catch (TelegramApiException | IOException e) {
+                text = botAnswers.TwoStepAnswers(update, botCommands, usersLog);
+            } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
-
         else {
-            SendMessage sendMessage = new SendMessage();
-            sendMessage.setText("Сударь, вы ввели некорректно");
-            try {
-                this.execute(sendMessage);
+            text = ("Сударь, вы ввели некорректно");
+        }
 
-            } catch (TelegramApiException e) {
-                throw new RuntimeException(e);
-            }
+
+        sendMessage.setText(text);
+        try {
+            this.execute(sendMessage);
+        } catch (TelegramApiException e) {
+            throw new RuntimeException(e);
         }
     }
 }

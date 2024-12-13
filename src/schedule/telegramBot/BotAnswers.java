@@ -1,17 +1,60 @@
 package schedule.telegramBot;
 import org.apache.commons.lang3.StringUtils;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import schedule.models.Group;
 import schedule.models.Lesson;
-
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
+import java.util.*;
+
 
 public class BotAnswers {
+    private final HashMap<String, Group> schedule;
+    public BotAnswers(HashMap<String, Group> schedule) {
+        this.schedule = schedule;
+    }
+    public boolean isGroup(String s, HashMap<String, Group> schedule) {
+        return schedule.containsKey(s);
+    }
+
+    public ReplyKeyboardMarkup replyKeyboardMarkup() {
+        ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
+        replyKeyboardMarkup.setSelective(true);
+        replyKeyboardMarkup.setResizeKeyboard(true);
+        replyKeyboardMarkup.setOneTimeKeyboard(false);
+        replyKeyboardMarkup.setKeyboard(keyboardRows());
+        return replyKeyboardMarkup;
+    }
+
+
+    public List<KeyboardRow> keyboardRows() {
+        List<KeyboardRow> rows = new ArrayList<>();
+        rows.add(new KeyboardRow(keyboardButtonslevel1()));
+        rows.add(new KeyboardRow(keyboardButtonslevel2()));
+        rows.add(new KeyboardRow(keyboardButtonslevel3()));
+        return rows;
+    }
+    public List<KeyboardButton> keyboardButtonslevel1() {
+        List<KeyboardButton> buttons = new ArrayList<>();
+        buttons.add(new KeyboardButton("Мое расписание на сегодня"));
+        buttons.add(new KeyboardButton("Мое расписание на завтра"));
+        buttons.add(new KeyboardButton("Мое расписание на неделю"));
+        return buttons;
+    }
+    public List<KeyboardButton> keyboardButtonslevel2() {
+        List<KeyboardButton> buttons = new ArrayList<>();
+        buttons.add(new KeyboardButton("Мое расписание на неделю"));
+        buttons.add(new KeyboardButton("мое расписание на следующую неделю"));
+        return buttons;
+    }
+    public List<KeyboardButton> keyboardButtonslevel3() {
+        List<KeyboardButton> buttons = new ArrayList<>();
+        buttons.add(new KeyboardButton("Мое ближайшее занятие"));
+        return buttons;
+    }
     String daySchedule(ArrayList<Lesson> lessons, int week, long dayTimestamp) {
         StringBuilder text = new StringBuilder();
         int weekParity;
@@ -57,124 +100,116 @@ public class BotAnswers {
                 Используются такие библиотеки как gson и telegramBots""";
     }
 
-    SendMessage OneStepAnswers(Update update, UsersLog usersLog, BotCommands botCommands, String command,
-                               String groupNumber, HashMap<String, Group> schedule) throws IOException {
-
-        String chatId = update.getMessage().getChatId().toString();
+    /**
+     *
+     * @param update is users data from telegram
+     * @param usersLog is users logs
+     * @param botCommands commands of bot
+     * @param command is command from user
+     * @param groupNumber is group of user
+     * @return text
+     */
+    String OneStepAnswers(Update update, UsersLog usersLog, BotCommands botCommands, String command,
+                               String groupNumber) throws IOException {
         String text = "";
         Calendar calendar = new GregorianCalendar();
         int week = calendar.get(Calendar.WEEK_OF_YEAR);
-        if (calendar.get(Calendar.MONTH) >= 9) {
-            week -= new GregorianCalendar(calendar.get(Calendar.YEAR),
+        week -= switch (calendar.get(Calendar.MONTH) < 9) {
+            case false -> new GregorianCalendar(calendar.get(Calendar.YEAR),
                     Calendar.SEPTEMBER,
                     1).get(Calendar.WEEK_OF_YEAR);
-        }
-        else {
-            week -= new GregorianCalendar(calendar.get(Calendar.YEAR) - 1,
+            case true -> new GregorianCalendar(calendar.get(Calendar.YEAR) - 1,
                     Calendar.SEPTEMBER,
                     1).get(Calendar.WEEK_OF_YEAR);
-        }
+        };
         UsersLog.UserLog userLog = new UsersLog.UserLog();
-        if (command.toLowerCase().equals(OneStepBotCommands.START.getTitle())) {
-            text = String.valueOf(startCommand(botCommands));
-        }
-        else if (command.toLowerCase().equals(OneStepBotCommands.INFO.getTitle())) {
-            text = infoCommand();
-        }
-        else if (!groupNumber.isEmpty()) {
-            if (StringUtils.isNumeric(groupNumber) && (schedule.containsKey(groupNumber))) {
-                if (command.toLowerCase().equals(OneStepBotCommands.TODAY__GROUP_NUMBER.getTitle())) {
-                    int today = (calendar.get(Calendar.DAY_OF_WEEK) - 2) % 7;
-                    ArrayList<Lesson> lessons = schedule.get(groupNumber).getDays().getDayOfWeek(today).getLessons();
+        switch (OneStepBotCommands.INFO.whichCommand(command)) {
+            case 0 -> text = String.valueOf(startCommand(botCommands));
+            case 1 -> text = infoCommand();
+            case 2 -> {
+                int today = (calendar.get(Calendar.DAY_OF_WEEK) - 2) % 7;
+                ArrayList<Lesson> lessons = schedule.get(groupNumber).getDays().getDayOfWeek(today).getLessons();
+                text = String.format("Расписание на %d.%d\n%s",
+                        calendar.get(Calendar.DAY_OF_MONTH),
+                        calendar.get(Calendar.MONTH),
+                        daySchedule(lessons, week, getTimestamp(calendar)));
+            }
+            case 3 -> {
+                calendar.roll(Calendar.DAY_OF_YEAR, 1);
+                int tomorrow = (calendar.get(Calendar.DAY_OF_WEEK) - 2) % 7;
+                if (tomorrow == 0) {
+                    week++;
+                }
+                if (StringUtils.isNumeric(groupNumber) && (schedule.containsKey(groupNumber))) {
+                    ArrayList<Lesson> lessons = schedule.get(groupNumber).getDays()
+                            .getDayOfWeek(tomorrow).getLessons();
+                    text = daySchedule(lessons, week, getTimestamp(calendar));
                     text = String.format("Расписание на %d.%d\n%s",
                             calendar.get(Calendar.DAY_OF_MONTH),
                             calendar.get(Calendar.MONTH),
-                            daySchedule(lessons, week, getTimestamp(calendar)));
+                            text);
                 }
-                else if (command.toLowerCase().equals(OneStepBotCommands.TOMORROW__GROUP_NUMBER.getTitle())) {
-                    calendar.roll(Calendar.DAY_OF_YEAR, 1);
-                    int tomorrow = (calendar.get(Calendar.DAY_OF_WEEK) - 2) % 7;
-                    if (tomorrow == 0) { week++; }
-                    if (StringUtils.isNumeric(groupNumber) && (schedule.containsKey(groupNumber))) {
+                calendar.roll(Calendar.DAY_OF_YEAR, -1);
+            }
+            case 4 -> {
+                int indexDayOfWeek = (calendar.get(Calendar.DAY_OF_WEEK) - 2) % 7;
+                calendar.roll(Calendar.DAY_OF_YEAR, -indexDayOfWeek);
+                for (int i = 0; i < 7; i++) {
+                    if (!schedule.get(groupNumber).getDays().getDayOfWeek(i).getLessons().isEmpty()) {
                         ArrayList<Lesson> lessons = schedule.get(groupNumber).getDays()
-                                .getDayOfWeek(tomorrow).getLessons();
-                        text = daySchedule(lessons, week, getTimestamp(calendar));
-                        text = String.format("Расписание на %d.%d\n%s",
-                                calendar.get(Calendar.DAY_OF_MONTH),
-                                calendar.get(Calendar.MONTH),
-                                text);
+                                .getDayOfWeek(i).getLessons();
+                        text = String.format("%s%s\n%s\n",
+                                text, schedule.get(groupNumber).getDays().getDayOfWeek(i).getName(),
+                                daySchedule(lessons, week, getTimestamp(calendar)));
                     }
-                    calendar.roll(Calendar.DAY_OF_YEAR, -1);
+                    calendar.roll(Calendar.DAY_OF_YEAR, 1);
                 }
-                else if (command.toLowerCase().equals(OneStepBotCommands.THIS_WEEK__GROUP_NUMBER.getTitle())) {
-                    int indexDayOfWeek = (calendar.get(Calendar.DAY_OF_WEEK) - 2) % 7;
-                    calendar.roll(Calendar.DAY_OF_YEAR, -indexDayOfWeek);
-                    for (int i = 0; i < 7; i++) {
-                        if (!schedule.get(groupNumber).getDays().getDayOfWeek(i).getLessons().isEmpty()) {
-                            ArrayList<Lesson> lessons = schedule.get(groupNumber).getDays()
-                                    .getDayOfWeek(i).getLessons();
-                            text = String.format("%s%s\n%s\n",
-                                    text, schedule.get(groupNumber).getDays().getDayOfWeek(i).getName(),
-                                    daySchedule(lessons, week, getTimestamp(calendar)));
-                        }
-                        calendar.roll(Calendar.DAY_OF_YEAR, 1);
-                    }
-                    calendar.roll(Calendar.DAY_OF_YEAR, -7 + indexDayOfWeek);
-                }
-                else if (command.toLowerCase().equals(OneStepBotCommands.NEXT_WEEK__GROUP_NUMBER.getTitle())) {
-                    week += 1;
-                    int indexDayOfWeek = (calendar.get(Calendar.DAY_OF_WEEK) - 2) % 7;
-                    calendar.roll(Calendar.DAY_OF_YEAR, -indexDayOfWeek + 7);
-                    for (int i = 0; i < 7; i++) {
-                        if (!schedule.get(groupNumber).getDays().getDayOfWeek(i).getLessons().isEmpty()) {
-                            ArrayList<Lesson> lessons = schedule.get(groupNumber).getDays().getDayOfWeek(i).getLessons();
-                            text = String.format("%s%s\n%s\n",
-                                    text, schedule.get(groupNumber).getDays().getDayOfWeek(i).getName(),
-                                    daySchedule(lessons, week, getTimestamp(calendar)));
-                        }
-                        calendar.roll(Calendar.DAY_OF_YEAR, 1);
-                    }
-                    calendar.roll(Calendar.DAY_OF_YEAR, -14 + indexDayOfWeek);
-                }
-                else if (command.toLowerCase().equals(OneStepBotCommands.GROUP.getTitle())) {
-                    userLog.setUserId(update.getMessage().getFrom().getId().toString());
-                    userLog.setCommand(groupNumber);
-                    usersLog.addUserLog(userLog);
-                    usersLog.newLog();
-                    text = "Ваша группа успешно сохранена";
-                }
-                else if (command.toLowerCase().equals(OneStepBotCommands.NEAR_LESSON__GROUP_NUMBER.getTitle())) {
-                    int secondsOfDay = getSecondsOfDay(calendar);
-                    int today = (calendar.get(Calendar.DAY_OF_WEEK) - 2) % 7;
-                    ArrayList<Lesson> lessons = schedule.get(groupNumber).getDays().getDayOfWeek(today).getLessons();
-                    int numberOfRolls = 0;
-                    while (text.isEmpty()) {
-                        for (Lesson lesson : lessons) {
-                            if (secondsOfDay <= lesson.getEndTimeSeconds() || numberOfRolls >= 1) {
-                                text = lesson.toString(getTimestamp(calendar));
-                                break;
-                            }
-                        }
-                        calendar.roll(Calendar.DAY_OF_YEAR, 1);
-                        numberOfRolls += 1;
-                    }
-                    calendar.roll(Calendar.DAY_OF_YEAR, -numberOfRolls);
-                }
-                else {
-                    text = "Мы не знаем такой команды";
-                }
+                calendar.roll(Calendar.DAY_OF_YEAR, -7 + indexDayOfWeek);
             }
-            else {
-                text = "Вы ввели некорректный номер группы";
+            case 5 -> {
+                week += 1;
+                int indexDayOfWeek = (calendar.get(Calendar.DAY_OF_WEEK) - 2) % 7;
+                calendar.roll(Calendar.DAY_OF_YEAR, -indexDayOfWeek + 7);
+                for (int i = 0; i < 7; i++) {
+                    if (!schedule.get(groupNumber).getDays().getDayOfWeek(i).getLessons().isEmpty()) {
+                        ArrayList<Lesson> lessons = schedule.get(groupNumber).getDays().getDayOfWeek(i).getLessons();
+                        text = String.format("%s%s\n%s\n",
+                                text, schedule.get(groupNumber).getDays().getDayOfWeek(i).getName(),
+                                daySchedule(lessons, week, getTimestamp(calendar)));
+                    }
+                    calendar.roll(Calendar.DAY_OF_YEAR, 1);
+                }
+                calendar.roll(Calendar.DAY_OF_YEAR, -14 + indexDayOfWeek);
             }
+            case 6 -> {
+                usersLog.deleteGroup(update.getMessage().getFrom().getId().toString());
+                userLog.setUserId(update.getMessage().getFrom().getId().toString());
+                userLog.setCommand(groupNumber);
+                usersLog.addUserLog(userLog);
+                usersLog.newLog();
+                text = "Ваша группа успешно сохранена";
+
+            }
+            case 7 -> {
+                int secondsOfDay = getSecondsOfDay(calendar);
+                int today = (calendar.get(Calendar.DAY_OF_WEEK) - 2) % 7;
+                ArrayList<Lesson> lessons = schedule.get(groupNumber).getDays().getDayOfWeek(today).getLessons();
+                int numberOfRolls = 0;
+                while (text.isEmpty()) {
+                    for (Lesson lesson : lessons) {
+                        if (secondsOfDay <= lesson.getEndTimeSeconds() || numberOfRolls >= 1) {
+                            text = lesson.toString(getTimestamp(calendar));
+                            break;
+                        }
+                    }
+                    calendar.roll(Calendar.DAY_OF_YEAR, 1);
+                    numberOfRolls += 1;
+                }
+                calendar.roll(Calendar.DAY_OF_YEAR, -numberOfRolls);
+            }
+            default -> text = "Данная команда не обрабатывается в программе";
         }
-        else {
-            text = "Мы не знаем такой команды";
-        }
-        SendMessage sendMessage = new SendMessage();
-        sendMessage.setChatId(chatId);
-        sendMessage.setText(text);
-        return sendMessage;
+        return text;
     }
 
     static long getTimestamp(Calendar cl) {
@@ -185,38 +220,29 @@ public class BotAnswers {
         return (cl.get(Calendar.HOUR_OF_DAY) * 60 + cl.get(Calendar.MINUTE)) * 60 + cl.get(Calendar.SECOND);
     }
 
-    SendMessage TwoStepAnswers(Update update, BotCommands botCommands, UsersLog usersLog,
-                               HashMap<String, Group> schedule) throws IOException {
-        String chatId = update.getMessage().getChatId().toString();
-        String text = update.getMessage().getText();
-        SendMessage sendMessage = new SendMessage();
-        if (text.startsWith("М")) {
+    String TwoStepAnswers(Update update, BotCommands botCommands, UsersLog usersLog) throws IOException {
+        String message = update.getMessage().getText().toLowerCase();
+        String text;
+        if (message.startsWith("мое")) {
             if (usersLog.contains(update)) {
-                String commandPiece;
+                String command = message.replaceFirst("мое ", "");
                 String group = usersLog.getGroup(update.getMessage().getFrom().getId().toString());
-                commandPiece = switch (text) {
-                    case "Мое расписание на сегодня" -> "Расписание на сегодня";
-                    case "Мое расписание на завтра" -> "Расписание на завтра";
-                    case "Мое расписание на неделю" -> "Расписание на неделю";
-                    case "Мое расписание на следующую неделю" -> "Расписание на следующую неделю";
-                    default -> "";
-                };
-                sendMessage = OneStepAnswers(update, usersLog,botCommands, commandPiece, group, schedule );
+                text = OneStepAnswers(update, usersLog,botCommands, command, group );
             }
             else {
-                sendMessage.setText("Введите Группа [группа] \nИ повторите попытку");
+                text = ("Введите Группа [группа] \nИ повторите попытку");
             }
         }
         else if (botCommands.oneStepCommand.contains(update.getMessage().getText())){
-            sendMessage.setText("Введите номер вашей группы");
+            text = ("Введите номер вашей группы");
             UsersLog.UserLog userLog = new UsersLog.UserLog();
             userLog.setCommand(update.getMessage().getText());
             userLog.setUserId(update.getMessage().getFrom().getId().toString());
             usersLog.addUserLog(userLog);
             usersLog.newLog();
+        } else {
+            text = "Команда не обрабатывается";
         }
-
-        sendMessage.setChatId(chatId);
-        return sendMessage;
+        return text;
     }
 }

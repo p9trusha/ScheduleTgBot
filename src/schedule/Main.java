@@ -5,14 +5,12 @@ import org.apache.commons.io.IOUtils;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.io.*;
 import java.util.HashMap;
-
 import schedule.telegramBot.BotCommands;
 import schedule.telegramBot.BotComponent;
 import schedule.telegramBot.UsersLog;
@@ -49,6 +47,7 @@ public class Main {
             UsersLog usersLog = new UsersLog();
             usersLog.logsReader();
             TelegramBotsApi telegramBotsApi = new TelegramBotsApi(DefaultBotSession.class);
+
             telegramBotsApi.registerBot(new BotComponent(botCommands, token, schedule, usersLog));
             }
 

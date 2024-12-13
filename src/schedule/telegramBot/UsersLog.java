@@ -27,7 +27,12 @@ public class UsersLog {
      */
     void deleteCommand(String id) {
 
-        logs.removeIf(log -> Objects.equals(log.userId, id) && !StringUtils.isNumeric(log.command));
+        logs.removeIf(log -> Objects.equals(log.userId, id)
+                && !StringUtils.isNumeric(log.command));
+    }
+    void deleteGroup(String id) {
+        logs.removeIf(log-> Objects.equals(log.userId, id)
+                && StringUtils.isNumeric(log.command.substring(0, 4)));
     }
 
     /**
