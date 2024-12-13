@@ -1,5 +1,31 @@
 package schedule.telegramBot;
 
+class OneStepBotCommand {
+    private final int id;
+    private final String text;
+
+    private OneStepBotCommand(int id, String text) {
+        this.id = id;
+        this.text = text;
+    }
+
+    static OneStepBotCommand start = new OneStepBotCommand(0, "/start");
+    static OneStepBotCommand info = new OneStepBotCommand(1, "/info");
+    static OneStepBotCommand today = new OneStepBotCommand(2, "расписание на сегодня");
+    static OneStepBotCommand tomorrow = new OneStepBotCommand(3, "расписание на завтра");
+    static OneStepBotCommand thisWeek = new OneStepBotCommand(4, "расписание на неделю");
+    static OneStepBotCommand nextWeek = new OneStepBotCommand(5, "расписание на следующую неделю");
+    static OneStepBotCommand nearLesson = new OneStepBotCommand(6, "ближайшее занятие");
+
+    public int getId() {
+        return id;
+    }
+
+    public String getText() {
+        return text;
+    }
+}
+
 public enum OneStepBotCommands {
     START("/start"),
     INFO("/info"),

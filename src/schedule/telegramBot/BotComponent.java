@@ -48,13 +48,13 @@ public class BotComponent extends TelegramLongPollingBot{
 
     @Override
     public void onUpdateReceived(Update update) {
-        String message = update.getMessage().getText();
+        String message = update.getMessage().getText().strip().toLowerCase();
         String groupPiece = "";
         String commandPiece = "";
         String id = update.getMessage().getFrom().getId().toString();
 
         if (usersLog.getCommand(id) != null) {
-            if (StringUtils.isNumeric(message) && message.length() == 4) {
+            if (schedule.containsKey(message)) {
                 groupPiece = message;
                 commandPiece = usersLog.getCommand(id);
                 System.out.println(usersLog.getLogs());
@@ -71,10 +71,20 @@ public class BotComponent extends TelegramLongPollingBot{
 
         if (message.startsWith("/")) {
             commandPiece = message;
-        } else if (message.length() > 4) {
-            groupPiece = message.substring(message.lastIndexOf(" ") + 1);
-            commandPiece = message.substring(0, message.lastIndexOf(" ") + 1);
-            commandPiece = withOutSpace(commandPiece);
+        }
+        else if (message.length() >= 4) {
+            String supposedlyGroupNumber = message;
+            if (message.contains(" ")) {
+                supposedlyGroupNumber = message.substring(message.lastIndexOf(" ") + 1);
+                commandPiece = message.substring(0, message.lastIndexOf(" ") + 1);
+                commandPiece = withOutSpace(commandPiece);
+            }
+            if (schedule.containsKey(supposedlyGroupNumber)) {
+                groupPiece = supposedlyGroupNumber;
+            }
+            else {
+                commandPiece = message;
+            }
         }
         if (botCommands.oneStepCommand.contains(commandPiece)) {
             {
@@ -94,7 +104,6 @@ public class BotComponent extends TelegramLongPollingBot{
                 throw new RuntimeException(e);
             }
         }
-
         else {
             SendMessage sendMessage = new SendMessage();
             sendMessage.setText("Сударь, вы ввели некорректно");

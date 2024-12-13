@@ -74,29 +74,30 @@ public class BotAnswers {
                     Calendar.SEPTEMBER,
                     1).get(Calendar.WEEK_OF_YEAR);
         }
+        int indexDayOfWeek = (calendar.get(Calendar.DAY_OF_WEEK) - 2) % 7;
         UsersLog.UserLog userLog = new UsersLog.UserLog();
-        if (command.toLowerCase().equals(OneStepBotCommands.START.getTitle())) {
-            text = String.valueOf(startCommand(botCommands));
-        }
-        else if (command.toLowerCase().equals(OneStepBotCommands.INFO.getTitle())) {
-            text = infoCommand();
-        }
-        else if (!groupNumber.isEmpty()) {
-            if (StringUtils.isNumeric(groupNumber) && (schedule.containsKey(groupNumber))) {
-                if (command.toLowerCase().equals(OneStepBotCommands.TODAY__GROUP_NUMBER.getTitle())) {
-                    int today = (calendar.get(Calendar.DAY_OF_WEEK) - 2) % 7;
-                    ArrayList<Lesson> lessons = schedule.get(groupNumber).getDays().getDayOfWeek(today).getLessons();
+        if (groupNumber.isEmpty())
+            text = switch (command) {
+                case "/start" -> String.valueOf(startCommand(botCommands));
+                case "/info" -> infoCommand();
+                default -> text;
+            };
+        else {
+            ArrayList<Lesson> lessons;
+            switch (command) {
+                case "расписание на сегодня":
+                    lessons = schedule.get(groupNumber).getDays().getDayOfWeek(indexDayOfWeek).getLessons();
                     text = String.format("Расписание на %d.%d\n%s",
                             calendar.get(Calendar.DAY_OF_MONTH),
                             calendar.get(Calendar.MONTH),
                             daySchedule(lessons, week, getTimestamp(calendar)));
-                }
-                else if (command.toLowerCase().equals(OneStepBotCommands.TOMORROW__GROUP_NUMBER.getTitle())) {
+                    break;
+                case "расписание на завтра":
                     calendar.roll(Calendar.DAY_OF_YEAR, 1);
                     int tomorrow = (calendar.get(Calendar.DAY_OF_WEEK) - 2) % 7;
                     if (tomorrow == 0) { week++; }
                     if (StringUtils.isNumeric(groupNumber) && (schedule.containsKey(groupNumber))) {
-                        ArrayList<Lesson> lessons = schedule.get(groupNumber).getDays()
+                        lessons = schedule.get(groupNumber).getDays()
                                 .getDayOfWeek(tomorrow).getLessons();
                         text = daySchedule(lessons, week, getTimestamp(calendar));
                         text = String.format("Расписание на %d.%d\n%s",
@@ -105,13 +106,12 @@ public class BotAnswers {
                                 text);
                     }
                     calendar.roll(Calendar.DAY_OF_YEAR, -1);
-                }
-                else if (command.toLowerCase().equals(OneStepBotCommands.THIS_WEEK__GROUP_NUMBER.getTitle())) {
-                    int indexDayOfWeek = (calendar.get(Calendar.DAY_OF_WEEK) - 2) % 7;
+                    break;
+                case "расписание на неделю":
                     calendar.roll(Calendar.DAY_OF_YEAR, -indexDayOfWeek);
                     for (int i = 0; i < 7; i++) {
                         if (!schedule.get(groupNumber).getDays().getDayOfWeek(i).getLessons().isEmpty()) {
-                            ArrayList<Lesson> lessons = schedule.get(groupNumber).getDays()
+                            lessons = schedule.get(groupNumber).getDays()
                                     .getDayOfWeek(i).getLessons();
                             text = String.format("%s%s\n%s\n",
                                     text, schedule.get(groupNumber).getDays().getDayOfWeek(i).getName(),
@@ -120,14 +120,13 @@ public class BotAnswers {
                         calendar.roll(Calendar.DAY_OF_YEAR, 1);
                     }
                     calendar.roll(Calendar.DAY_OF_YEAR, -7 + indexDayOfWeek);
-                }
-                else if (command.toLowerCase().equals(OneStepBotCommands.NEXT_WEEK__GROUP_NUMBER.getTitle())) {
+                    break;
+                case "расписание на следующую неделю":
                     week += 1;
-                    int indexDayOfWeek = (calendar.get(Calendar.DAY_OF_WEEK) - 2) % 7;
                     calendar.roll(Calendar.DAY_OF_YEAR, -indexDayOfWeek + 7);
                     for (int i = 0; i < 7; i++) {
                         if (!schedule.get(groupNumber).getDays().getDayOfWeek(i).getLessons().isEmpty()) {
-                            ArrayList<Lesson> lessons = schedule.get(groupNumber).getDays().getDayOfWeek(i).getLessons();
+                            lessons = schedule.get(groupNumber).getDays().getDayOfWeek(i).getLessons();
                             text = String.format("%s%s\n%s\n",
                                     text, schedule.get(groupNumber).getDays().getDayOfWeek(i).getName(),
                                     daySchedule(lessons, week, getTimestamp(calendar)));
@@ -135,20 +134,21 @@ public class BotAnswers {
                         calendar.roll(Calendar.DAY_OF_YEAR, 1);
                     }
                     calendar.roll(Calendar.DAY_OF_YEAR, -14 + indexDayOfWeek);
-                }
-                else if (command.toLowerCase().equals(OneStepBotCommands.GROUP.getTitle())) {
+                    break;
+                case "группа":
                     userLog.setUserId(update.getMessage().getFrom().getId().toString());
                     userLog.setCommand(groupNumber);
                     usersLog.addUserLog(userLog);
                     usersLog.newLog();
                     text = "Ваша группа успешно сохранена";
-                }
-                else if (command.toLowerCase().equals(OneStepBotCommands.NEAR_LESSON__GROUP_NUMBER.getTitle())) {
+                    break;
+                case "ближайшее занятие":
                     int secondsOfDay = getSecondsOfDay(calendar);
-                    int today = (calendar.get(Calendar.DAY_OF_WEEK) - 2) % 7;
-                    ArrayList<Lesson> lessons = schedule.get(groupNumber).getDays().getDayOfWeek(today).getLessons();
                     int numberOfRolls = 0;
                     while (text.isEmpty()) {
+                        indexDayOfWeek = (calendar.get(Calendar.DAY_OF_WEEK) - 2) % 7;
+                        lessons = schedule.get(groupNumber).getDays()
+                                .getDayOfWeek(indexDayOfWeek).getLessons();
                         for (Lesson lesson : lessons) {
                             if (secondsOfDay <= lesson.getEndTimeSeconds() || numberOfRolls >= 1) {
                                 text = lesson.toString(getTimestamp(calendar));
@@ -159,17 +159,8 @@ public class BotAnswers {
                         numberOfRolls += 1;
                     }
                     calendar.roll(Calendar.DAY_OF_YEAR, -numberOfRolls);
-                }
-                else {
-                    text = "Мы не знаем такой команды";
-                }
+                    break;
             }
-            else {
-                text = "Вы ввели некорректный номер группы";
-            }
-        }
-        else {
-            text = "Мы не знаем такой команды";
         }
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(chatId);
@@ -190,15 +181,15 @@ public class BotAnswers {
         String chatId = update.getMessage().getChatId().toString();
         String text = update.getMessage().getText();
         SendMessage sendMessage = new SendMessage();
-        if (text.startsWith("М")) {
+        if (text.startsWith("м")) {
             if (usersLog.contains(update)) {
                 String commandPiece;
                 String group = usersLog.getGroup(update.getMessage().getFrom().getId().toString());
                 commandPiece = switch (text) {
-                    case "Мое расписание на сегодня" -> "Расписание на сегодня";
-                    case "Мое расписание на завтра" -> "Расписание на завтра";
-                    case "Мое расписание на неделю" -> "Расписание на неделю";
-                    case "Мое расписание на следующую неделю" -> "Расписание на следующую неделю";
+                    case "мое расписание на сегодня" -> "расписание на сегодня";
+                    case "мое расписание на завтра" -> "расписание на завтра";
+                    case "мое расписание на неделю" -> "расписание на неделю";
+                    case "мое расписание на следующую неделю" -> "расписание на следующую неделю";
                     default -> "";
                 };
                 sendMessage = OneStepAnswers(update, usersLog,botCommands, commandPiece, group, schedule );
