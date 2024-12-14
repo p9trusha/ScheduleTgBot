@@ -21,7 +21,7 @@ public class BotAnswers {
     private static final String GROUP ="группа";
     private static final String NEAR_LESSON__GROUP_NUMBER = "ближайшее занятие";
     private static final String DAY_WEEK__GROUP_NUMBER = "расписание на";
-
+    
 
     private final HashMap<String, Group> schedule;
     public BotAnswers(HashMap<String, Group> schedule) {
@@ -222,9 +222,9 @@ public class BotAnswers {
         String[] namesOfDaysOfWeekAccusative = new String[] {
                 "понедельник", "вторник", "среду", "четверг",
                 "пятницу", "субботу", "воскресенье"};
-        if (command.startsWith("расписание на")) {
+        if (command.startsWith(DAY_WEEK__GROUP_NUMBER)) {
             int indexCurrentDayOfWeek = Arrays.asList(namesOfDaysOfWeekAccusative).
-                    indexOf(command.substring("расписание на ".length()));
+                    indexOf(command.substring(DAY_WEEK__GROUP_NUMBER.length()));
             if (indexCurrentDayOfWeek != -1) {
                 ArrayList<Lesson> lessons = schedule.get(groupNumber).getDays()
                         .getDayOfWeek(indexCurrentDayOfWeek).getLessons();
