@@ -42,11 +42,9 @@ public class BotComponent extends TelegramLongPollingBot{
 
     @Override
     public void onUpdateReceived(Update update) {
-
-
         BotAnswers botAnswers = new BotAnswers(schedule);
-        String message = update.getMessage().getText().toLowerCase();
-        message= withOutSpaceInEnd(message);
+        String message = update.getMessage().getText().toLowerCase().strip();
+        message = withOutSpaceInEnd(message);
         String groupPiece = "";
         String commandPiece = "";
         String text;
@@ -73,17 +71,16 @@ public class BotComponent extends TelegramLongPollingBot{
             commandPiece = message.substring(0, message.lastIndexOf(" ") + 1);
             commandPiece = withOutSpaceInEnd(commandPiece);
         }
-        switch (botCommands.oneStepCommand.contains(commandPiece)) {
-            case true : {
-                try {
-                    text = botAnswers.OneStepAnswers(update,
-                            usersLog, botCommands, commandPiece, groupPiece);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-                break;
+        if (botCommands.oneStepCommand.contains(commandPiece)) {
+            try {
+                text = botAnswers.OneStepAnswers(update,
+                        usersLog, botCommands, commandPiece, groupPiece);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
-            case false: if (botCommands.twoStepCommand.contains(message)) {
+        }
+        else {
+            if (botCommands.twoStepCommand.contains(message)) {
                 try {
                     text = botAnswers.TwoStepAnswers(update, botCommands, usersLog);
                 } catch (IOException e) {

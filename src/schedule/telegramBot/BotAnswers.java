@@ -20,7 +20,7 @@ public class BotAnswers {
     private static final String NEXT_WEEK__GROUP_NUMBER = "расписание на следующую неделю";
     private static final String GROUP ="группа";
     private static final String NEAR_LESSON__GROUP_NUMBER = "ближайшее занятие";
-    private static final String DAY_WEEK__GROUP_NUMBER = "расписание на"
+    private static final String DAY_WEEK__GROUP_NUMBER = "расписание на";
 
 
     private final HashMap<String, Group> schedule;
@@ -218,6 +218,7 @@ public class BotAnswers {
             }
             default -> text = "Данная команда не обрабатывается в программе";
         }
+        // винительный падеж
         String[] namesOfDaysOfWeekAccusative = new String[] {
                 "понедельник", "вторник", "среду", "четверг",
                 "пятницу", "субботу", "воскресенье"};
@@ -225,32 +226,23 @@ public class BotAnswers {
             int indexCurrentDayOfWeek = Arrays.asList(namesOfDaysOfWeekAccusative).
                     indexOf(command.substring("расписание на ".length()));
             if (indexCurrentDayOfWeek != -1) {
-                lessons = schedule.get(groupNumber).getDays()
+                ArrayList<Lesson> lessons = schedule.get(groupNumber).getDays()
                         .getDayOfWeek(indexCurrentDayOfWeek).getLessons();
-                if (indexDayOfWeek <= indexCurrentDayOfWeek) {
-                    text = String.format("Расписание на %s\n%s",
-                            namesOfDaysOfWeekAccusative[indexCurrentDayOfWeek],
-                            daySchedule(lessons, week, getTimestamp(
-                                    new GregorianCalendar(
-                                            calendar.get(Calendar.YEAR),
-                                            calendar.get(Calendar.MONTH),
-                                            calendar.get(Calendar.DAY_OF_MONTH) +
-                                                    indexCurrentDayOfWeek - indexDayOfWeek
+                text = text.concat(String.format("Расписание на %s\n",
+                        namesOfDaysOfWeekAccusative[indexCurrentDayOfWeek]));
+                int dayOfMonth = calendar.get(Calendar.DAY_OF_MONTH) + indexCurrentDayOfWeek - indexDayOfWeek;
+                if (indexDayOfWeek < indexCurrentDayOfWeek) {
+                    week += 1;
+                    dayOfMonth += 7;
+                }
+                text = text.concat(
+                        daySchedule(lessons, week , getTimestamp(
+                                new GregorianCalendar(
+                                        calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), dayOfMonth
                                     )
                             )));
-                }
-                else {
-                    text = String.format("Расписание на %s\n%s",
-                            namesOfDaysOfWeekAccusative[indexCurrentDayOfWeek],
-                            daySchedule(lessons, week + 1, getTimestamp(
-                                    new GregorianCalendar(
-                                            calendar.get(Calendar.YEAR),
-                                            calendar.get(Calendar.MONTH),
-                                            calendar.get(Calendar.DAY_OF_MONTH) + 7 +
-                                                    indexCurrentDayOfWeek - indexDayOfWeek
-                                    )
-                            )));
-                }
+            }
+        }
         return text;
     }
 
