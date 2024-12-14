@@ -45,7 +45,7 @@ public class Main {
             String jsonContent = EtuApi.getJson();
             HashMap<String, Group> schedule = Parser.json(jsonContent);
             UsersLog usersLog = new UsersLog();
-            usersLog.logsReader();
+            UsersLog.logsReader(usersLog);;
             TelegramBotsApi telegramBotsApi = new TelegramBotsApi(DefaultBotSession.class);
 
             telegramBotsApi.registerBot(new BotComponent(botCommands, token, schedule, usersLog));
@@ -57,6 +57,7 @@ public class Main {
             throw new RuntimeException(e);
         }
     }
+
 
     private static BotCommands getBotCommands(BufferedReader commandReader) throws IOException {
         BotCommands botCommands = new BotCommands();

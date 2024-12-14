@@ -12,6 +12,17 @@ import java.util.*;
 
 
 public class BotAnswers {
+
+    private static final String START_COMMAND = "/start";
+    private static final String INFO_COMMAND = "/info";
+    private static final String TODAY__GROUP_NUMBER = "расписание на сегодня";
+    private static final String TOMORROW__GROUP_NUMBER = "расписание на завтра";
+    private static final String THIS_WEEK__GROUP_NUMBER = "расписание на неделю";
+    private static final String NEXT_WEEK__GROUP_NUMBER = "расписание на следующую неделю";
+    private static final String GROUP ="группа";
+    private static final String NEAR_LESSON__GROUP_NUMBER = "ближайшее занятие";
+
+
     private final HashMap<String, Group> schedule;
     public BotAnswers(HashMap<String, Group> schedule) {
         this.schedule = schedule;
@@ -19,44 +30,37 @@ public class BotAnswers {
     public boolean isGroup(String s, HashMap<String, Group> schedule) {
         return schedule.containsKey(s);
     }
-
-    public ReplyKeyboardMarkup replyKeyboardMarkup() {
+    public ReplyKeyboardMarkup replyKeyboardMarkup(ArrayList<String> array) {
         ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
         replyKeyboardMarkup.setSelective(true);
         replyKeyboardMarkup.setResizeKeyboard(true);
         replyKeyboardMarkup.setOneTimeKeyboard(false);
-        replyKeyboardMarkup.setKeyboard(keyboardRows());
+        replyKeyboardMarkup.setKeyboard(keyboardRows(array));
         return replyKeyboardMarkup;
     }
-
-
-    public List<KeyboardRow> keyboardRows() {
+    public List<KeyboardRow> keyboardRows(ArrayList<String> array) {
         List<KeyboardRow> rows = new ArrayList<>();
-        rows.add(new KeyboardRow(keyboardButtonslevel1()));
-        rows.add(new KeyboardRow(keyboardButtonslevel2()));
-        rows.add(new KeyboardRow(keyboardButtonslevel3()));
+        List<List<KeyboardButton>> buttonsLevels = keyboardButtonsLevels(array);
+        for (List<KeyboardButton> keyboardButtons : buttonsLevels) {
+            rows.add(new KeyboardRow(keyboardButtons));
+        }
         return rows;
     }
-    public List<KeyboardButton> keyboardButtonslevel1() {
+    public List<List<KeyboardButton>> keyboardButtonsLevels(ArrayList<String> array) {
+        List<List<KeyboardButton>> buttonsLevels = new ArrayList<>();
         List<KeyboardButton> buttons = new ArrayList<>();
-        buttons.add(new KeyboardButton("Мое расписание на сегодня"));
-        buttons.add(new KeyboardButton("Мое расписание на завтра"));
-        buttons.add(new KeyboardButton("Мое расписание на неделю"));
-        return buttons;
-    }
-    public List<KeyboardButton> keyboardButtonslevel2() {
-        List<KeyboardButton> buttons = new ArrayList<>();
-        buttons.add(new KeyboardButton("Мое расписание на неделю"));
-        buttons.add(new KeyboardButton("мое расписание на следующую неделю"));
-        return buttons;
-    }
-    public List<KeyboardButton> keyboardButtonslevel3() {
-        List<KeyboardButton> buttons = new ArrayList<>();
-        buttons.add(new KeyboardButton("Мое ближайшее занятие"));
-        return buttons;
+        for (int i = 0; i<array.size(); i++) {
+            if (i%2==0) {
+                buttonsLevels.add(buttons);
+                buttons = new ArrayList<>();
+            }
+            buttons.add(new KeyboardButton(array.get(i)));
+        }
+        buttonsLevels.add(buttons);
+        return buttonsLevels;
     }
     String daySchedule(ArrayList<Lesson> lessons, int week, long dayTimestamp) {
-        StringBuilder text = new StringBuilder();
+        String text = "";
         int weekParity;
         if (week % 2 == 0) {
             weekParity = 2;
@@ -66,24 +70,25 @@ public class BotAnswers {
         }
         for (Lesson lesson : lessons) {
             if (lesson.getWeek() == weekParity) {
-                text.append(lesson.toString(dayTimestamp));
+                text = text.concat(lesson.toString(dayTimestamp));
             }
         }
-    return text.toString();
+    return text;
     }
 
-    StringBuilder startCommand(BotCommands botCommands) {
-        StringBuilder text = new StringBuilder("Приветствуем в нашем боте, доступны такие команды:\nОдноступенчатые\n");
+    String startCommand(BotCommands botCommands) {
+        String text = "Приветствуем в нашем боте, доступны такие команды:\nОдноступенчатые\n";
         for (int i = 0; i < botCommands.oneStepCommand.size(); i++) {
             if (botCommands.oneStepCommand.get(i).startsWith("/")) {
-                text.append(botCommands.oneStepCommand.get(i)).append('\n');
+                text = text.concat(botCommands.oneStepCommand.get(i) +'\n');
             }
             else {
-            text.append(botCommands.oneStepCommand.get(i)).append(" [Номер группы]").append('\n');}
+                text = text.concat(botCommands.oneStepCommand.get(i) + " [Номер группы]\n");
+            }
         }
-        text.append("Двухступенчатые:\n");
+        text = text.concat("Двухступенчатые:\n");
         for (int i = 0; i < botCommands.twoStepCommand.size(); i++) {
-            text.append(botCommands.twoStepCommand.get(i)).append('\n');
+            text = text.concat(botCommands.twoStepCommand.get(i) + '\n');
         }
         return text;
     }
@@ -101,13 +106,15 @@ public class BotAnswers {
     }
 
     /**
-     *
+     * OneStepAnswers register a full command only. Example (/start or schedule to tomorrow 3354
      * @param update is users data from telegram
-     * @param usersLog is users logs
+     * @param usersLog users logs (like, Vasya is from **** this group and he can write fast commands
+     *                       or Vasya wrote schedule to tomorrow without group number, and usersLog save this move)
+     *
      * @param botCommands commands of bot
      * @param command is command from user
      * @param groupNumber is group of user
-     * @return text
+     * @return String text answers
      */
     String OneStepAnswers(Update update, UsersLog usersLog, BotCommands botCommands, String command,
                                String groupNumber) throws IOException {
@@ -123,10 +130,11 @@ public class BotAnswers {
                     1).get(Calendar.WEEK_OF_YEAR);
         };
         UsersLog.UserLog userLog = new UsersLog.UserLog();
-        switch (OneStepBotCommands.INFO.whichCommand(command)) {
-            case 0 -> text = String.valueOf(startCommand(botCommands));
-            case 1 -> text = infoCommand();
-            case 2 -> {
+
+        switch (command) {
+            case START_COMMAND -> text = startCommand(botCommands);
+            case INFO_COMMAND -> text = infoCommand();
+            case TODAY__GROUP_NUMBER -> {
                 int today = (calendar.get(Calendar.DAY_OF_WEEK) - 2) % 7;
                 ArrayList<Lesson> lessons = schedule.get(groupNumber).getDays().getDayOfWeek(today).getLessons();
                 text = String.format("Расписание на %d.%d\n%s",
@@ -134,7 +142,7 @@ public class BotAnswers {
                         calendar.get(Calendar.MONTH),
                         daySchedule(lessons, week, getTimestamp(calendar)));
             }
-            case 3 -> {
+            case TOMORROW__GROUP_NUMBER -> {
                 calendar.roll(Calendar.DAY_OF_YEAR, 1);
                 int tomorrow = (calendar.get(Calendar.DAY_OF_WEEK) - 2) % 7;
                 if (tomorrow == 0) {
@@ -151,7 +159,7 @@ public class BotAnswers {
                 }
                 calendar.roll(Calendar.DAY_OF_YEAR, -1);
             }
-            case 4 -> {
+            case THIS_WEEK__GROUP_NUMBER -> {
                 int indexDayOfWeek = (calendar.get(Calendar.DAY_OF_WEEK) - 2) % 7;
                 calendar.roll(Calendar.DAY_OF_YEAR, -indexDayOfWeek);
                 for (int i = 0; i < 7; i++) {
@@ -166,7 +174,7 @@ public class BotAnswers {
                 }
                 calendar.roll(Calendar.DAY_OF_YEAR, -7 + indexDayOfWeek);
             }
-            case 5 -> {
+            case NEXT_WEEK__GROUP_NUMBER -> {
                 week += 1;
                 int indexDayOfWeek = (calendar.get(Calendar.DAY_OF_WEEK) - 2) % 7;
                 calendar.roll(Calendar.DAY_OF_YEAR, -indexDayOfWeek + 7);
@@ -181,7 +189,7 @@ public class BotAnswers {
                 }
                 calendar.roll(Calendar.DAY_OF_YEAR, -14 + indexDayOfWeek);
             }
-            case 6 -> {
+            case GROUP -> {
                 usersLog.deleteGroup(update.getMessage().getFrom().getId().toString());
                 userLog.setUserId(update.getMessage().getFrom().getId().toString());
                 userLog.setCommand(groupNumber);
@@ -190,7 +198,7 @@ public class BotAnswers {
                 text = "Ваша группа успешно сохранена";
 
             }
-            case 7 -> {
+            case NEAR_LESSON__GROUP_NUMBER -> {
                 int secondsOfDay = getSecondsOfDay(calendar);
                 int today = (calendar.get(Calendar.DAY_OF_WEEK) - 2) % 7;
                 ArrayList<Lesson> lessons = schedule.get(groupNumber).getDays().getDayOfWeek(today).getLessons();
@@ -220,6 +228,15 @@ public class BotAnswers {
         return (cl.get(Calendar.HOUR_OF_DAY) * 60 + cl.get(Calendar.MINUTE)) * 60 + cl.get(Calendar.SECOND);
     }
 
+    /**
+     * TwoStepAnswers have a fast commands without group name, and he register command without group
+     * @param update is users data
+     * @param botCommands is commands
+     * @param usersLog users logs (like, Vasya is from **** this group and he can write fast commands
+     *                 or Vasya wrote schedule to tomorrow without group number, and usersLog save this move)
+     * @return String text answers
+     * @throws IOException
+     */
     String TwoStepAnswers(Update update, BotCommands botCommands, UsersLog usersLog) throws IOException {
         String message = update.getMessage().getText().toLowerCase();
         String text;
