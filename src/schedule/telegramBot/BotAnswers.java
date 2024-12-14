@@ -20,7 +20,7 @@ public class BotAnswers {
     private static final String NEXT_WEEK__GROUP_NUMBER = "расписание на следующую неделю";
     private static final String GROUP ="группа";
     private static final String NEAR_LESSON__GROUP_NUMBER = "ближайшее занятие";
-    private static final String DAY_WEEK__GROUP_NUMBER = "расписание на";
+    private static final String DAY_WEEK__GROUP_NUMBER = "расписание на ";
     
 
     private final HashMap<String, Group> schedule;
@@ -50,7 +50,7 @@ public class BotAnswers {
         List<List<KeyboardButton>> buttonsLevels = new ArrayList<>();
         List<KeyboardButton> buttons = new ArrayList<>();
         for (int i = 0; i<array.size(); i++) {
-            if (i%2==0) {
+            if (i%3==0) {
                 buttonsLevels.add(buttons);
                 buttons = new ArrayList<>();
             }
@@ -86,7 +86,7 @@ public class BotAnswers {
                 text = text.concat(botCommands.oneStepCommand.get(i) + " [Номер группы]\n");
             }
         }
-        text = text.concat("Двухступенчатые:\n");
+        text = text.concat("\nДвухступенчатые:\n");
         for (int i = 0; i < botCommands.twoStepCommand.size(); i++) {
             text = text.concat(botCommands.twoStepCommand.get(i) + '\n');
         }
@@ -133,8 +133,37 @@ public class BotAnswers {
         }
         int indexDayOfWeek = (calendar.get(Calendar.DAY_OF_WEEK) - 2) % 7;
         UsersLog.UserLog userLog = new UsersLog.UserLog();
+        String[] namesOfDaysOfWeekAccusative = new String[] {
+                "понедельник", "вторник", "среду", "четверг",
+                "пятницу", "субботу", "воскресенье"};
+        int indexCurrentDayOfWeek = -1;
+        if (command.startsWith(DAY_WEEK__GROUP_NUMBER)) {
+            indexCurrentDayOfWeek = Arrays.asList(namesOfDaysOfWeekAccusative).
+                    indexOf(command.substring(DAY_WEEK__GROUP_NUMBER.length()));
+            if (indexCurrentDayOfWeek != -1) {
+                command = DAY_WEEK__GROUP_NUMBER;
+            }
+        }
 
         switch (command) {
+            case DAY_WEEK__GROUP_NUMBER -> {
+                ArrayList<Lesson> lessons = schedule.get(groupNumber).getDays()
+                        .getDayOfWeek(indexCurrentDayOfWeek).getLessons();
+                text = text.concat(String.format("Расписание на %s\n",
+                        namesOfDaysOfWeekAccusative[indexCurrentDayOfWeek]));
+                int dayOfMonth = calendar.get(Calendar.DAY_OF_MONTH) + indexCurrentDayOfWeek - indexDayOfWeek;
+                if (indexDayOfWeek < indexCurrentDayOfWeek) {
+                    week += 1;
+                    dayOfMonth += 7;
+                }
+                text = text.concat(
+                        daySchedule(lessons, week , getTimestamp(
+                                new GregorianCalendar(
+                                        calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), dayOfMonth
+                                )
+                        )));
+            }
+
             case START_COMMAND -> text = startCommand(botCommands);
             case INFO_COMMAND -> text = infoCommand();
             case TODAY__GROUP_NUMBER -> {
@@ -218,31 +247,7 @@ public class BotAnswers {
             }
             default -> text = "Данная команда не обрабатывается в программе";
         }
-        // винительный падеж
-        String[] namesOfDaysOfWeekAccusative = new String[] {
-                "понедельник", "вторник", "среду", "четверг",
-                "пятницу", "субботу", "воскресенье"};
-        if (command.startsWith(DAY_WEEK__GROUP_NUMBER)) {
-            int indexCurrentDayOfWeek = Arrays.asList(namesOfDaysOfWeekAccusative).
-                    indexOf(command.substring(DAY_WEEK__GROUP_NUMBER.length()));
-            if (indexCurrentDayOfWeek != -1) {
-                ArrayList<Lesson> lessons = schedule.get(groupNumber).getDays()
-                        .getDayOfWeek(indexCurrentDayOfWeek).getLessons();
-                text = text.concat(String.format("Расписание на %s\n",
-                        namesOfDaysOfWeekAccusative[indexCurrentDayOfWeek]));
-                int dayOfMonth = calendar.get(Calendar.DAY_OF_MONTH) + indexCurrentDayOfWeek - indexDayOfWeek;
-                if (indexDayOfWeek < indexCurrentDayOfWeek) {
-                    week += 1;
-                    dayOfMonth += 7;
-                }
-                text = text.concat(
-                        daySchedule(lessons, week , getTimestamp(
-                                new GregorianCalendar(
-                                        calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), dayOfMonth
-                                    )
-                            )));
-            }
-        }
+
         return text;
     }
 

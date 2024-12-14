@@ -33,18 +33,12 @@ public class BotComponent extends TelegramLongPollingBot{
         this.schedule = schedule;
         this.usersLog = usersLog;
     }
-    public String withOutSpaceInEnd(String s){
-        while (s.endsWith(" ")) {
-            s = s.substring(0, s.length() - 1);
-        }
-        return s;
-    }
 
     @Override
     public void onUpdateReceived(Update update) {
         BotAnswers botAnswers = new BotAnswers(schedule);
         String message = update.getMessage().getText().toLowerCase().strip();
-        message = withOutSpaceInEnd(message);
+        message = message.replace("ё", "е");
         String groupPiece = "";
         String commandPiece = "";
         String text;
@@ -69,7 +63,7 @@ public class BotComponent extends TelegramLongPollingBot{
         } else if (message.length() > 4) {
             groupPiece = message.substring(message.lastIndexOf(" ") + 1);
             commandPiece = message.substring(0, message.lastIndexOf(" ") + 1);
-            commandPiece = withOutSpaceInEnd(commandPiece);
+            commandPiece = commandPiece.strip();
         }
         if (botCommands.oneStepCommand.contains(commandPiece)) {
             try {
