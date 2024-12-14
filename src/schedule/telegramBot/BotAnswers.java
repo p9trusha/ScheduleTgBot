@@ -6,10 +6,7 @@ import schedule.models.Group;
 import schedule.models.Lesson;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
+import java.util.*;
 
 public class BotAnswers {
     String daySchedule(ArrayList<Lesson> lessons, int week, long dayTimestamp) {
@@ -160,8 +157,46 @@ public class BotAnswers {
                     }
                     calendar.roll(Calendar.DAY_OF_YEAR, -numberOfRolls);
                     break;
+                default:
+                    // винительный падеж
+                    String[] namesOfDaysOfWeekAccusative = new String[] {
+                            "понедельник", "вторник", "среду", "четверг",
+                            "пятницу", "субботу", "воскресенье"};
+                    if (command.startsWith("расписание на")) {
+                        int indexCurrentDayOfWeek = Arrays.asList(namesOfDaysOfWeekAccusative).
+                                indexOf(command.substring("расписание на ".length()));
+                        if (indexCurrentDayOfWeek != -1) {
+                            lessons = schedule.get(groupNumber).getDays()
+                                    .getDayOfWeek(indexCurrentDayOfWeek).getLessons();
+                            if (indexDayOfWeek <= indexCurrentDayOfWeek) {
+                                text = String.format("Расписание на %s\n%s",
+                                        namesOfDaysOfWeekAccusative[indexCurrentDayOfWeek],
+                                        daySchedule(lessons, week, getTimestamp(
+                                                new GregorianCalendar(
+                                                        calendar.get(Calendar.YEAR),
+                                                        calendar.get(Calendar.MONTH),
+                                                        calendar.get(Calendar.DAY_OF_MONTH) +
+                                                                indexCurrentDayOfWeek - indexDayOfWeek
+                                                )
+                                        )));
+                            }
+                            else {
+                                text = String.format("Расписание на %s\n%s",
+                                        namesOfDaysOfWeekAccusative[indexCurrentDayOfWeek],
+                                        daySchedule(lessons, week + 1, getTimestamp(
+                                                new GregorianCalendar(
+                                                        calendar.get(Calendar.YEAR),
+                                                        calendar.get(Calendar.MONTH),
+                                                        calendar.get(Calendar.DAY_OF_MONTH) + 7 +
+                                                                indexCurrentDayOfWeek - indexDayOfWeek
+                                                )
+                                        )));
+                            }
+                        }
+                    }
             }
         }
+        if (text.isEmpty()) { text = "пар нет"; }
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(chatId);
         sendMessage.setText(text);
