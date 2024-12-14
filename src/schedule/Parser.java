@@ -8,6 +8,9 @@ import schedule.models.Group;
 import java.util.HashMap;
 import java.util.Set;
 
+/**
+ *
+ */
 public class Parser {
     static HashMap<String, Group> json(String inputLine) {
         JsonObject jsonObject = (JsonObject) JsonParser.parseString(inputLine);

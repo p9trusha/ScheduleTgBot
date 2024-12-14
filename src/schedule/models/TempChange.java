@@ -2,6 +2,7 @@ package schedule.models;
 
 import com.google.gson.annotations.SerializedName;
 
+
 public class TempChange {
     private String type;
     private String teacher;

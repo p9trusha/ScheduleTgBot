@@ -4,6 +4,9 @@ import com.google.gson.annotations.SerializedName;
 
 import java.util.ArrayList;
 
+/**
+ * class to pars schedule from json
+ */
 public class Lesson {
     private String teacher;
     private String subjectType;

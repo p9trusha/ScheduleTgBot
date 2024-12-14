@@ -12,7 +12,7 @@ import java.util.Objects;
  *
  */
 public class UsersLog {
-    private final ArrayList<UserLog> logs = new ArrayList<>();
+    private ArrayList<UserLog> logs = new ArrayList<>();
 
 
     void addUserLog(UserLog userLog) {
@@ -26,8 +26,12 @@ public class UsersLog {
      * @param id is UserId in telegram
      */
     void deleteCommand(String id) {
-
-        logs.removeIf(log -> Objects.equals(log.userId, id) && !StringUtils.isNumeric(log.command));
+        logs.removeIf(log -> Objects.equals(log.userId, id)
+                && !StringUtils.isNumeric(log.command));
+    }
+    void deleteGroup(String id) {
+        logs.removeIf(log-> Objects.equals(log.userId, id)
+                && StringUtils.isNumeric(log.command.substring(0, 4)));
     }
 
     /**
@@ -94,7 +98,7 @@ public class UsersLog {
 
     }
 
-    private final String path = "src/schedule/telegramBot/logUsers.txt";
+    private static final String path = "src/schedule/telegramBot/logUsers.txt";
     public void newLog() throws IOException {
         BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(path));
         int t = 0;
@@ -107,20 +111,17 @@ public class UsersLog {
                 bufferedWriter.write(log.getCommand() + "/" + log.getUserId());
             }
         }
-
         bufferedWriter.close();
     }
-    public void logsReader() throws IOException {
+    public static void logsReader(UsersLog usersLog) throws IOException {
         BufferedReader bufferedReader = new BufferedReader(new FileReader(path));
+
         String line;
         UsersLog.UserLog userLog = new UsersLog.UserLog();
-        for (int i = 0; i < bufferedReader.lines().count(); i++) {
-            line = bufferedReader.readLine();
-            if (line != null && !line.isEmpty()) {
-                userLog.setUserId(line.substring(0, line.lastIndexOf("/")));
-                userLog.setCommand(line.substring(line.lastIndexOf("/")));
-                this.addUserLog(userLog);
-            }
+        while ((line = bufferedReader.readLine()) != null){
+            userLog.setCommand(line.substring(0, line.lastIndexOf("/")));
+            userLog.setUserId(line.substring(line.lastIndexOf("/")+1));
+            usersLog.addUserLog(userLog);
         }
         bufferedReader.close();
     }

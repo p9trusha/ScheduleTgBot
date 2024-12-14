@@ -1,30 +1,26 @@
 package schedule.telegramBot;
-
-
-import org.apache.commons.lang3.StringUtils;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
-
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
-
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import schedule.models.Group;
-
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 
-
+/**
+ * {@code token} is telegramBot token
+ * <p>
+ * {@code onUpdateReceived} check server
+ * if server have update method would be start and give answers to user
+ */
 public class BotComponent extends TelegramLongPollingBot{
-
     HashMap<String, Group> schedule;
-
     @Override
     public String getBotUsername() {
         return "schedule_etu3354_bot";
     }
     String token;
-
-
     @Override
     public String getBotToken() {
         return token;
@@ -37,82 +33,82 @@ public class BotComponent extends TelegramLongPollingBot{
         this.schedule = schedule;
         this.usersLog = usersLog;
     }
-    public String withOutSpace(String s){
+    public String withOutSpaceInEnd(String s){
         while (s.endsWith(" ")) {
             s = s.substring(0, s.length() - 1);
         }
         return s;
     }
-    BotAnswers botAnswers = new BotAnswers();
-
 
     @Override
     public void onUpdateReceived(Update update) {
-        String message = update.getMessage().getText().strip().toLowerCase();
+
+
+        BotAnswers botAnswers = new BotAnswers(schedule);
+        String message = update.getMessage().getText().toLowerCase();
+        message= withOutSpaceInEnd(message);
         String groupPiece = "";
         String commandPiece = "";
+        String text;
         String id = update.getMessage().getFrom().getId().toString();
-
+        SendMessage sendMessage = new SendMessage();
+        sendMessage.setChatId(update.getMessage().getChatId());
         if (usersLog.getCommand(id) != null) {
-            if (schedule.containsKey(message)) {
+            if (botAnswers.isGroup(message, schedule)) {
                 groupPiece = message;
                 commandPiece = usersLog.getCommand(id);
-                System.out.println(usersLog.getLogs());
                 usersLog.deleteCommand(id);
-                System.out.println(usersLog.getLogs());
                 try {
                     usersLog.newLog();
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
-
             }
         }
 
         if (message.startsWith("/")) {
             commandPiece = message;
+        } else if (message.length() > 4) {
+            groupPiece = message.substring(message.lastIndexOf(" ") + 1);
+            commandPiece = message.substring(0, message.lastIndexOf(" ") + 1);
+            commandPiece = withOutSpaceInEnd(commandPiece);
         }
-        else if (message.length() >= 4) {
-            String supposedlyGroupNumber = message;
-            if (message.contains(" ")) {
-                supposedlyGroupNumber = message.substring(message.lastIndexOf(" ") + 1);
-                commandPiece = message.substring(0, message.lastIndexOf(" ") + 1);
-                commandPiece = withOutSpace(commandPiece);
-            }
-            if (schedule.containsKey(supposedlyGroupNumber)) {
-                groupPiece = supposedlyGroupNumber;
-            }
-            else {
-                commandPiece = message;
-            }
-        }
-        if (botCommands.oneStepCommand.contains(commandPiece)) {
-            {
+        switch (botCommands.oneStepCommand.contains(commandPiece)) {
+            case true : {
                 try {
-                    this.execute(botAnswers.OneStepAnswers(update,usersLog, botCommands,
-                            commandPiece, groupPiece, schedule));
-                } catch (TelegramApiException | IOException e) {
+                    text = botAnswers.OneStepAnswers(update,
+                            usersLog, botCommands, commandPiece, groupPiece);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                break;
+            }
+            case false: if (botCommands.twoStepCommand.contains(message)) {
+                try {
+                    text = botAnswers.TwoStepAnswers(update, botCommands, usersLog);
+                } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
             }
-        }
-        else if (botCommands.twoStepCommand.contains(message)) {
-
-            try {
-                this.execute(botAnswers.TwoStepAnswers(update, botCommands, usersLog, schedule));
-            } catch (TelegramApiException | IOException e) {
-                throw new RuntimeException(e);
+            else {
+                text = ("Сударь, вы ввели некорректно");
             }
         }
-        else {
-            SendMessage sendMessage = new SendMessage();
-            sendMessage.setText("Сударь, вы ввели некорректно");
-            try {
-                this.execute(sendMessage);
+        sendMessage.setText(text);
 
-            } catch (TelegramApiException e) {
-                throw new RuntimeException(e);
+        if (usersLog.getGroup(update.getMessage().getFrom().getId().toString()) != null) {
+            ArrayList<String> arrayFastCommands = new ArrayList<>();
+            for (String s : botCommands.twoStepCommand) {
+                if (s.startsWith("мое")) {
+                    arrayFastCommands.add(s);
+                }
             }
+            sendMessage.setReplyMarkup(botAnswers.replyKeyboardMarkup(arrayFastCommands));
+        }
+        try {
+            this.execute(sendMessage);
+        } catch (TelegramApiException e) {
+            throw new RuntimeException(e);
         }
     }
 }

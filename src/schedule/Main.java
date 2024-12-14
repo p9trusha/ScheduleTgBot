@@ -5,14 +5,12 @@ import org.apache.commons.io.IOUtils;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.io.*;
 import java.util.HashMap;
-
 import schedule.telegramBot.BotCommands;
 import schedule.telegramBot.BotComponent;
 import schedule.telegramBot.UsersLog;
@@ -33,7 +31,7 @@ public class Main {
      * class main
      * wow
      */
-    public static void main(String[] args) throws TelegramApiException {
+    public static void main(String[] args) {
         String tokenPath = "token.txt";
         String commandsPath = "botCommands.txt";
         try (BufferedReader reader = new BufferedReader(new FileReader(tokenPath))){
@@ -47,8 +45,9 @@ public class Main {
             String jsonContent = EtuApi.getJson();
             HashMap<String, Group> schedule = Parser.json(jsonContent);
             UsersLog usersLog = new UsersLog();
-            usersLog.logsReader();
+            UsersLog.logsReader(usersLog);;
             TelegramBotsApi telegramBotsApi = new TelegramBotsApi(DefaultBotSession.class);
+
             telegramBotsApi.registerBot(new BotComponent(botCommands, token, schedule, usersLog));
             }
 
@@ -58,6 +57,7 @@ public class Main {
             throw new RuntimeException(e);
         }
     }
+
 
     private static BotCommands getBotCommands(BufferedReader commandReader) throws IOException {
         BotCommands botCommands = new BotCommands();
