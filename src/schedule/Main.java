@@ -31,7 +31,7 @@ public class Main {
      * class main
      * wow
      */
-    public static void main(String[] args) throws TelegramApiException {
+    public static void main(String[] args) {
         String tokenPath = "token.txt";
         String commandsPath = "botCommands.txt";
         try (BufferedReader reader = new BufferedReader(new FileReader(tokenPath))){

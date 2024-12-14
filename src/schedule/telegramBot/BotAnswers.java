@@ -235,7 +235,6 @@ public class BotAnswers {
      * @param usersLog users logs (like, Vasya is from **** this group and he can write fast commands
      *                 or Vasya wrote schedule to tomorrow without group number, and usersLog save this move)
      * @return String text answers
-     * @throws IOException
      */
     String TwoStepAnswers(Update update, BotCommands botCommands, UsersLog usersLog) throws IOException {
         String message = update.getMessage().getText().toLowerCase();
