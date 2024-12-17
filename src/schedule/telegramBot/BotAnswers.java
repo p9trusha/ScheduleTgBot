@@ -144,10 +144,10 @@ public class BotAnswers {
                 command = DAY_WEEK__GROUP_NUMBER;
             }
         }
-
+        ArrayList<Lesson> lessons;
         switch (command) {
             case DAY_WEEK__GROUP_NUMBER -> {
-                ArrayList<Lesson> lessons = schedule.get(groupNumber).getDays()
+                lessons = schedule.get(groupNumber).getDays()
                         .getDayOfWeek(indexCurrentDayOfWeek).getLessons();
                 text = text.concat(String.format("Расписание на %s\n",
                         namesOfDaysOfWeekAccusative[indexCurrentDayOfWeek]));
@@ -167,7 +167,7 @@ public class BotAnswers {
             case START_COMMAND -> text = startCommand(botCommands);
             case INFO_COMMAND -> text = infoCommand();
             case TODAY__GROUP_NUMBER -> {
-                ArrayList<Lesson> lessons = schedule.get(groupNumber).getDays()
+                lessons = schedule.get(groupNumber).getDays()
                         .getDayOfWeek(indexDayOfWeek).getLessons();
                 text = String.format("Расписание на %d.%d\n%s",
                         calendar.get(Calendar.DAY_OF_MONTH),
@@ -181,7 +181,7 @@ public class BotAnswers {
                     week++;
                 }
                 if (StringUtils.isNumeric(groupNumber) && (schedule.containsKey(groupNumber))) {
-                    ArrayList<Lesson> lessons = schedule.get(groupNumber).getDays()
+                    lessons = schedule.get(groupNumber).getDays()
                             .getDayOfWeek(tomorrow).getLessons();
                     text = daySchedule(lessons, week, getTimestamp(calendar));
                     text = String.format("Расписание на %d.%d\n%s",
@@ -195,7 +195,7 @@ public class BotAnswers {
                 calendar.roll(Calendar.DAY_OF_YEAR, -indexDayOfWeek);
                 for (int i = 0; i < 7; i++) {
                     if (!schedule.get(groupNumber).getDays().getDayOfWeek(i).getLessons().isEmpty()) {
-                        ArrayList<Lesson> lessons = schedule.get(groupNumber).getDays()
+                        lessons = schedule.get(groupNumber).getDays()
                                 .getDayOfWeek(i).getLessons();
                         text = String.format("%s%s\n%s\n",
                                 text, schedule.get(groupNumber).getDays().getDayOfWeek(i).getName(),
@@ -210,7 +210,7 @@ public class BotAnswers {
                 calendar.roll(Calendar.DAY_OF_YEAR, -indexDayOfWeek + 7);
                 for (int i = 0; i < 7; i++) {
                     if (!schedule.get(groupNumber).getDays().getDayOfWeek(i).getLessons().isEmpty()) {
-                        ArrayList<Lesson> lessons = schedule.get(groupNumber).getDays().getDayOfWeek(i).getLessons();
+                        lessons = schedule.get(groupNumber).getDays().getDayOfWeek(i).getLessons();
                         text = String.format("%s%s\n%s\n",
                                 text, schedule.get(groupNumber).getDays().getDayOfWeek(i).getName(),
                                 daySchedule(lessons, week, getTimestamp(calendar)));
@@ -230,10 +230,11 @@ public class BotAnswers {
             }
             case NEAR_LESSON__GROUP_NUMBER -> {
                 int secondsOfDay = getSecondsOfDay(calendar);
-                int today = (calendar.get(Calendar.DAY_OF_WEEK) - 2) % 7;
                 int numberOfRolls = 0;
                 while (text.isEmpty()) {
-                    ArrayList<Lesson> lessons = schedule.get(groupNumber).getDays().getDayOfWeek(today).getLessons();
+                    indexDayOfWeek = (calendar.get(Calendar.DAY_OF_WEEK) - 2) % 7;
+                    lessons = schedule.get(groupNumber).getDays()
+                            .getDayOfWeek(indexDayOfWeek).getLessons();
                     for (Lesson lesson : lessons) {
                         if (secondsOfDay <= lesson.getEndTimeSeconds() || numberOfRolls >= 1) {
                             text = lesson.toString(getTimestamp(calendar));
@@ -241,7 +242,6 @@ public class BotAnswers {
                         }
                     }
                     calendar.roll(Calendar.DAY_OF_YEAR, 1);
-                    today = (calendar.get(Calendar.DAY_OF_WEEK) - 2) % 7;
                     numberOfRolls += 1;
                 }
                 calendar.roll(Calendar.DAY_OF_YEAR, -numberOfRolls);
