@@ -231,9 +231,9 @@ public class BotAnswers {
             case NEAR_LESSON__GROUP_NUMBER -> {
                 int secondsOfDay = getSecondsOfDay(calendar);
                 int today = (calendar.get(Calendar.DAY_OF_WEEK) - 2) % 7;
-                ArrayList<Lesson> lessons = schedule.get(groupNumber).getDays().getDayOfWeek(today).getLessons();
                 int numberOfRolls = 0;
                 while (text.isEmpty()) {
+                    ArrayList<Lesson> lessons = schedule.get(groupNumber).getDays().getDayOfWeek(today).getLessons();
                     for (Lesson lesson : lessons) {
                         if (secondsOfDay <= lesson.getEndTimeSeconds() || numberOfRolls >= 1) {
                             text = lesson.toString(getTimestamp(calendar));
@@ -241,6 +241,7 @@ public class BotAnswers {
                         }
                     }
                     calendar.roll(Calendar.DAY_OF_YEAR, 1);
+                    today = (calendar.get(Calendar.DAY_OF_WEEK) - 2) % 7;
                     numberOfRolls += 1;
                 }
                 calendar.roll(Calendar.DAY_OF_YEAR, -numberOfRolls);
