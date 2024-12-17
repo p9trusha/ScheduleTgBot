@@ -7,6 +7,7 @@ import schedule.models.Group;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Objects;
 
 /**
  * {@code token} is telegramBot token
@@ -65,7 +66,8 @@ public class BotComponent extends TelegramLongPollingBot{
             commandPiece = message.substring(0, message.lastIndexOf(" ") + 1);
             commandPiece = commandPiece.strip();
         }
-        if (botCommands.oneStepCommand.contains(commandPiece) && botAnswers.isGroup(groupPiece)) {
+        if (botCommands.oneStepCommand.contains(commandPiece) && botAnswers.isGroup(groupPiece)
+                || (botCommands.oneStepCommand.contains(commandPiece) && Objects.equals(commandPiece, message))) {
             try {
                 text = botAnswers.OneStepAnswers(update,
                         usersLog, botCommands, commandPiece, groupPiece);
