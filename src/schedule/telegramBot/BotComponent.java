@@ -46,7 +46,7 @@ public class BotComponent extends TelegramLongPollingBot{
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(update.getMessage().getChatId());
         if (usersLog.getCommand(id) != null) {
-            if (botAnswers.isGroup(message, schedule)) {
+            if (botAnswers.isGroup(message)) {
                 groupPiece = message;
                 commandPiece = usersLog.getCommand(id);
                 usersLog.deleteCommand(id);
@@ -65,7 +65,7 @@ public class BotComponent extends TelegramLongPollingBot{
             commandPiece = message.substring(0, message.lastIndexOf(" ") + 1);
             commandPiece = commandPiece.strip();
         }
-        if (botCommands.oneStepCommand.contains(commandPiece)) {
+        if (botCommands.oneStepCommand.contains(commandPiece) && botAnswers.isGroup(groupPiece)) {
             try {
                 text = botAnswers.OneStepAnswers(update,
                         usersLog, botCommands, commandPiece, groupPiece);
@@ -80,6 +80,11 @@ public class BotComponent extends TelegramLongPollingBot{
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
+            }
+            else if (botCommands.oneStepCommand.contains(commandPiece)){
+
+                text = ("Сударь, вы ввели некорректно группу");
+
             }
             else {
                 text = ("Сударь, вы ввели некорректно");

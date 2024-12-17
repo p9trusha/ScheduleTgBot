@@ -27,7 +27,7 @@ public class BotAnswers {
     public BotAnswers(HashMap<String, Group> schedule) {
         this.schedule = schedule;
     }
-    public boolean isGroup(String s, HashMap<String, Group> schedule) {
+    public boolean isGroup(String s) {
         return schedule.containsKey(s);
     }
     public ReplyKeyboardMarkup replyKeyboardMarkup(ArrayList<String> array) {
