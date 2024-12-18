@@ -39,6 +39,7 @@ public class BotComponent extends TelegramLongPollingBot{
     public void onUpdateReceived(Update update) {
         BotAnswers botAnswers = new BotAnswers(schedule);
         String message = update.getMessage().getText().toLowerCase().strip();
+        System.out.println(message + " ||| пользователь: " + update.getMessage().getFrom().getFirstName());
         message = message.replace("ё", "е");
         String groupPiece = "";
         String commandPiece = "";
@@ -67,7 +68,7 @@ public class BotComponent extends TelegramLongPollingBot{
             commandPiece = commandPiece.strip();
         }
         if (botCommands.oneStepCommand.contains(commandPiece) && botAnswers.isGroup(groupPiece)
-                || (botCommands.oneStepCommand.contains(commandPiece) && Objects.equals(commandPiece, message))) {
+                || (botCommands.oneStepCommand.contains(commandPiece) && message.startsWith("/"))) {
             try {
                 text = botAnswers.OneStepAnswers(update,
                         usersLog, botCommands, commandPiece, groupPiece);

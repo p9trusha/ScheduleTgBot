@@ -22,16 +22,9 @@ class EtuApi {
     }
 }
 
-/**
- * comment
- */
 public class Main {
 
-    /**
-     * class main
-     * wow
-     */
-    public static void main(String[] args) {
+    public static void main(String[] args)  {
         String tokenPath = "token.txt";
         String commandsPath = "botCommands.txt";
         try (BufferedReader reader = new BufferedReader(new FileReader(tokenPath))){
@@ -39,13 +32,11 @@ public class Main {
             String token;
             token = reader.readLine();
             reader.close();
-
             BotCommands botCommands = getBotCommands(commandReader);
-
             String jsonContent = EtuApi.getJson();
             HashMap<String, Group> schedule = Parser.json(jsonContent);
             UsersLog usersLog = new UsersLog();
-            UsersLog.logsReader(usersLog);;
+            UsersLog.logsReader(usersLog);
             TelegramBotsApi telegramBotsApi = new TelegramBotsApi(DefaultBotSession.class);
 
             telegramBotsApi.registerBot(new BotComponent(botCommands, token, schedule, usersLog));

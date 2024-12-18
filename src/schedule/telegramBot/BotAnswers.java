@@ -108,7 +108,7 @@ public class BotAnswers {
     /**
      * OneStepAnswers register a full command only. Example (/start or schedule to tomorrow 3354
      * @param update is users data from telegram
-     * @param usersLog users logs (like, Vasya is from **** this group and he can write fast commands
+     * @param usersLog users logs (like, Vasya is from **** this group, and he can write fast commands
      *                       or Vasya wrote schedule to tomorrow without group number, and usersLog save this move)
      *
      * @param botCommands commands of bot
@@ -145,10 +145,10 @@ public class BotAnswers {
                 command = DAY_WEEK__GROUP_NUMBER;
             }
         }
-
+        ArrayList<Lesson> lessons;
         switch (command) {
             case DAY_WEEK__GROUP_NUMBER -> {
-                ArrayList<Lesson> lessons = schedule.get(groupNumber).getDays()
+                lessons = schedule.get(groupNumber).getDays()
                         .getDayOfWeek(indexCurrentDayOfWeek).getLessons();
                 text = text.concat(String.format("Расписание на %s\n",
                         namesOfDaysOfWeekAccusative[indexCurrentDayOfWeek]));
@@ -168,7 +168,7 @@ public class BotAnswers {
             case START_COMMAND -> text = startCommand(botCommands);
             case INFO_COMMAND -> text = infoCommand();
             case TODAY__GROUP_NUMBER -> {
-                ArrayList<Lesson> lessons = schedule.get(groupNumber).getDays()
+                lessons = schedule.get(groupNumber).getDays()
                         .getDayOfWeek(indexDayOfWeek).getLessons();
                 text = String.format("Расписание на %d.%d\n%s",
                         calendar.get(Calendar.DAY_OF_MONTH),
@@ -182,7 +182,7 @@ public class BotAnswers {
                     week++;
                 }
                 if (StringUtils.isNumeric(groupNumber) && (schedule.containsKey(groupNumber))) {
-                    ArrayList<Lesson> lessons = schedule.get(groupNumber).getDays()
+                    lessons = schedule.get(groupNumber).getDays()
                             .getDayOfWeek(tomorrow).getLessons();
                     text = daySchedule(lessons, week, getTimestamp(calendar));
                     text = String.format("Расписание на %d.%d\n%s",
@@ -196,7 +196,7 @@ public class BotAnswers {
                 calendar.roll(Calendar.DAY_OF_YEAR, -indexDayOfWeek);
                 for (int i = 0; i < 7; i++) {
                     if (!schedule.get(groupNumber).getDays().getDayOfWeek(i).getLessons().isEmpty()) {
-                        ArrayList<Lesson> lessons = schedule.get(groupNumber).getDays()
+                        lessons = schedule.get(groupNumber).getDays()
                                 .getDayOfWeek(i).getLessons();
                         text = String.format("%s%s\n%s\n",
                                 text, schedule.get(groupNumber).getDays().getDayOfWeek(i).getName(),
@@ -211,7 +211,7 @@ public class BotAnswers {
                 calendar.roll(Calendar.DAY_OF_YEAR, -indexDayOfWeek + 7);
                 for (int i = 0; i < 7; i++) {
                     if (!schedule.get(groupNumber).getDays().getDayOfWeek(i).getLessons().isEmpty()) {
-                        ArrayList<Lesson> lessons = schedule.get(groupNumber).getDays().getDayOfWeek(i).getLessons();
+                        lessons = schedule.get(groupNumber).getDays().getDayOfWeek(i).getLessons();
                         text = String.format("%s%s\n%s\n",
                                 text, schedule.get(groupNumber).getDays().getDayOfWeek(i).getName(),
                                 daySchedule(lessons, week, getTimestamp(calendar)));
@@ -234,7 +234,7 @@ public class BotAnswers {
                 int today = (calendar.get(Calendar.DAY_OF_WEEK) - 2) % 7;
                 int numberOfRolls = 0;
                 while (text.isEmpty()) {
-                    ArrayList<Lesson> lessons = schedule.get(groupNumber).getDays().getDayOfWeek(today).getLessons();
+                    lessons = schedule.get(groupNumber).getDays().getDayOfWeek(today).getLessons();
                     for (Lesson lesson : lessons) {
                         if (secondsOfDay <= lesson.getEndTimeSeconds() || numberOfRolls >= 1) {
                             text = lesson.toString(getTimestamp(calendar));
@@ -262,10 +262,10 @@ public class BotAnswers {
     }
 
     /**
-     * TwoStepAnswers have a fast commands without group name, and he register command without group
+     * TwoStepAnswers have a fast commands without group name, and he registers command without group
      * @param update is users data
      * @param botCommands is commands
-     * @param usersLog users logs (like, Vasya is from **** this group and he can write fast commands
+     * @param usersLog users logs (like, Vasya is from **** this group, and he can write fast commands
      *                 or Vasya wrote schedule to tomorrow without group number, and usersLog save this move)
      * @return String text answers
      */
